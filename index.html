@@ -1,262 +1,12 @@
-<!DOCTYPE html>
-<html lang="uz">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Zikr & Vocabulary Cloud</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        /* --- RANG O'ZGARUVCHILARI --- */
-        :root {
-            --bg-color: #fff;
-            --text-color: #000;
-            --card-bg: #CFE2F3; 
-            --green-btn: #9CCC65;
-            --danger-btn: #ef5350;
-            --gray-text: #555;
-            --border-color: #eee;
-            --nav-bg: #f8f8f8;
-            --nav-active: #CFE2F3;
-        }
-
-        body.dark-mode {
-            --bg-color: #121212;
-            --text-color: #ffffff;
-            --card-bg: #1e1e1e;
-            --gray-text: #aaa;
-            --border-color: #333;
-            --nav-bg: #1e1e1e;
-            --nav-active: #333;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            transition: background-color 0.3s;
-        }
-
-        /* Loading ekrani */
-        #loading-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color); z-index: 999;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; font-weight: bold;
-        }
-
-        .page {
-            display: none;
-            flex: 1;
-            flex-direction: column;
-            padding: 20px;
-            overflow-y: auto;
-            align-items: center;
-        }
-        .page.active { display: flex; }
-
-        /* --- UI STYLES --- */
-        .add-box-container {
-            width: 100%; display: flex; justify-content: center;
-            margin-top: 40px; margin-bottom: 30px;
-        }
-        .add-box {
-            width: 80px; height: 60px; background-color: var(--card-bg);
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            font-size: 30px; cursor: pointer; color: var(--text-color);
-        }
-
-        .section-title {
-            width: 100%; text-align: center; font-size: 16px; margin-bottom: 15px;
-            font-weight: 500; color: var(--gray-text);
-        }
-
-        #list-container, #completed-list-container {
-            width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px;
-        }
-
-        .list-item {
-            width: 80%; padding: 15px; background-color: var(--card-bg);
-            border-radius: 12px; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; font-weight: 500;
-            cursor: pointer; text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        
-        .list-item.completed { background-color: var(--green-btn); color: #fff; }
-
-        /* INPUTS */
-        .input-group { width: 80%; display: flex; flex-direction: column; gap: 15px; margin-top: 40px; }
-        input {
-            width: 100%; padding: 15px; background: var(--card-bg);
-            border: 1px solid var(--border-color); border-radius: 10px;
-            text-align: center; font-size: 16px; outline: none;
-            box-sizing: border-box; color: var(--text-color);
-        }
-        .btn-create {
-            width: 100%; padding: 15px; background: var(--green-btn); color: white;
-            border: none; border-radius: 10px; font-size: 18px;
-            margin-top: 20px; cursor: pointer;
-        }
-
-        /* WATER VIEW */
-        .water-container {
-            margin-top: 50px; width: 220px; height: 220px; border-radius: 50%;
-            background-color: var(--card-bg); position: relative; overflow: hidden;
-            cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        .wave {
-            position: absolute; left: -50%; width: 200%; height: 200%;
-            background-color: #90caf9; border-radius: 40%;
-            animation: spin 6s linear infinite; top: var(--level, 100%);
-            transition: top 0.5s ease-in-out;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .water-text {
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            color: #444; font-size: 18px; font-weight: bold; z-index: 10;
-        }
-        
-        .chart-container { width: 100%; height: 250px; margin-top: 20px; padding: 10px; box-sizing: border-box; background: var(--card-bg); border-radius: 15px; }
-
-        /* PROFILE */
-        .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; }
-        .profile-img { width: 80px; height: 80px; border-radius: 50%; background-color: #ddd; margin-bottom: 10px; object-fit: cover; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-bottom: 30px; }
-        .stat-card { background: var(--card-bg); padding: 15px; border-radius: 15px; text-align: center; }
-        .settings-list { width: 100%; }
-        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border-color); }
-        
-        /* Switch */
-        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--green-btn); }
-        input:checked + .slider:before { transform: translateX(22px); }
-
-        /* NAV */
-        .bottom-nav {
-            height: 80px; display: flex; justify-content: center; align-items: center;
-            gap: 30px; padding-bottom: 20px; border-top: 1px solid var(--border-color);
-            background: var(--nav-bg);
-        }
-        .nav-block {
-            width: 60px; height: 60px; background-color: var(--bg-color);
-            border: 1px solid var(--border-color); border-radius: 15px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-size: 24px; transition: 0.2s;
-        }
-        .nav-block.active { background-color: var(--nav-active); transform: translateY(-5px); }
-    </style>
-</head>
-<body>
-
-    <div id="loading-screen">Yuklanmoqda...</div>
-
-    <div id="page-home" class="page active">
-        <div class="add-box-container">
-            <div class="add-box" onclick="navTo('page-create')">+</div>
-        </div>
-        <div class="section-title">Davom etyapti</div>
-        <div id="list-container"></div>
-    </div>
-
-    <div id="page-create" class="page">
-        <div class="input-group">
-            <input type="text" id="inp-name" placeholder="Nomi">
-            <input type="number" id="inp-total" placeholder="Jami soni" oninput="calculateDaily()">
-            <input type="number" id="inp-duration" placeholder="Davomiyligi (kun)" oninput="calculateDaily()">
-            <input type="text" id="inp-daily" placeholder="Har kuni" readonly>
-            
-            <button class="btn-create" onclick="createItem()">Yaratish</button>
-            <button class="btn-create" style="background:transparent; color:var(--gray-text); margin-top:0;" onclick="navTo('page-home')">Bekor qilish</button>
-        </div>
-    </div>
-
-    <div id="page-view" class="page">
-        <div class="water-container" onclick="incrementProgress()">
-            <div class="wave" id="water-wave"></div>
-            <div class="water-text" id="view-count">0</div>
-        </div>
-        <h2 style="margin-top:20px" id="view-name">...</h2>
-        <p style="color:var(--gray-text)">Bugungi maqsad: <span id="view-goal">0</span></p>
-        <button class="btn-create" style="width: 150px; margin-top: auto; margin-bottom: 20px; background:var(--card-bg); color:var(--text-color)" onclick="closeView()">Orqaga</button>
-    </div>
-
-    <div id="page-stats-list" class="page">
-        <h2 style="margin-top: 10px;">Yakunlanganlar</h2>
-        <div id="completed-list-container"></div>
-    </div>
-
-    <div id="page-stats-detail" class="page">
-        <h2 id="stat-title">Statistika</h2>
-        <div class="chart-container">
-            <canvas id="myChart"></canvas>
-        </div>
-        <div style="text-align:center; margin-top:20px;">
-            <div style="color:var(--gray-text);">Vaqt:</div>
-            <div style="font-size:24px; font-weight:bold; color:var(--green-btn)" id="stat-time">00:00</div>
-        </div>
-        <button class="btn-create" style="width: 150px; margin-top: auto; margin-bottom: 20px; background:var(--card-bg); color:var(--text-color)" onclick="navTo('page-stats-list')">Orqaga</button>
-    </div>
-
-    <div id="page-profile" class="page">
-        <div class="profile-header">
-            <img src="" alt="" id="user-photo" class="profile-img" style="display:none">
-            <div id="user-photo-placeholder" class="profile-img" style="display:flex; align-items:center; justify-content:center; font-size:30px">👤</div>
-            <div class="profile-name" id="user-name">Foydalanuvchi</div>
-            <div class="profile-level" id="user-level">Boshlovchi</div>
-        </div>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-val" id="total-reps-global">0</div>
-                <div class="stat-lbl">Jami aytilgan</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-val" id="total-completed-global">0</div>
-                <div class="stat-lbl">Yakunlangan maqsadlar</div>
-            </div>
-        </div>
-
-        <h3 style="align-self: flex-start; margin-bottom: 10px;">Sozlamalar</h3>
-        <div class="settings-list">
-            <div class="setting-item">
-                <span>Tungi rejim 🌙</span>
-                <label class="switch">
-                    <input type="checkbox" id="toggle-dark" onchange="toggleDarkMode()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <div class="setting-item">
-                <span>Vibratsiya 📳</span>
-                <label class="switch">
-                    <input type="checkbox" id="toggle-haptic" onchange="toggleHaptic()" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-        </div>
-        <div style="margin-top: 30px; color: var(--gray-text); font-size: 12px; text-align:center">
-            Ma'lumotlar Telegram Cloud orqali<br>barcha qurilmalarda saqlanadi.
-        </div>
-    </div>
-
-    <div class="bottom-nav">
-        <div class="nav-block active" onclick="navTo('page-home')">🏠</div>
-        <div class="nav-block" onclick="navTo('page-stats-list')">📊</div>
-        <div class="nav-block" onclick="navTo('page-profile')">👤</div>
-    </div>
-
-    <script>
+<script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        
+        // Rangni sozlash (xatolik bo'lmasligi uchun try-catch)
+        try {
+            tg.setHeaderColor(getComputedStyle(document.body).getPropertyValue('--bg-color').trim());
+            tg.setBackgroundColor(getComputedStyle(document.body).getPropertyValue('--bg-color').trim());
+        } catch (e) { console.log("Rang sozlashda xato"); }
 
         // --- GLOBAL VARIABLES ---
         let items = [];
@@ -267,56 +17,99 @@
         let chartInstance = null;
 
         // --- APP START ---
-        // Ilova ochilganda CloudStorage dan o'qib olamiz
         initApp();
 
         function initApp() {
-            // User Data
+            // 1. User ma'lumotlarini olish
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 const user = tg.initDataUnsafe.user;
                 document.getElementById('user-name').innerText = user.first_name;
+                document.getElementById('home-name').innerText = user.first_name;
                 if (user.photo_url) {
-                    const img = document.getElementById('user-photo');
-                    img.src = user.photo_url;
-                    img.style.display = 'block';
-                    document.getElementById('user-photo-placeholder').style.display = 'none';
+                    const els = ['user-photo', 'home-photo'];
+                    const phs = ['user-photo-placeholder', 'home-photo-ph'];
+                    els.forEach(id => {
+                        const img = document.getElementById(id);
+                        if(img) {
+                            img.src = user.photo_url;
+                            img.style.display = 'block';
+                        }
+                    });
+                    phs.forEach(id => {
+                        const p = document.getElementById(id);
+                        if(p) p.style.display = 'none';
+                    });
                 }
             }
 
-            // CloudStorage'dan ma'lumotlarni yuklash
-            tg.CloudStorage.getItem(['my_items_cloud', 'app_settings_cloud'], (error, value) => {
-                if (error) {
-                    tg.showAlert("Xatolik: Ma'lumot yuklanmadi");
-                } else {
-                    // Ma'lumotlarni o'zgaruvchilarga olish
-                    if (value.my_items_cloud) {
-                        items = JSON.parse(value.my_items_cloud);
-                    }
-                    if (value.app_settings_cloud) {
-                        settings = JSON.parse(value.app_settings_cloud);
-                    }
-                    
-                    // Sozlamalarni qo'llash
-                    applySettings();
-                    renderList();
+            // 2. Majburiy ochish (Sug'urta)
+            // Agar CloudStorage 2 soniyada javob bermasa, baribir ilovani ochamiz
+            setTimeout(() => {
+                const loader = document.getElementById('loading-screen');
+                if (loader && loader.style.display !== 'none') {
+                    console.warn("CloudStorage kechikdi, majburiy ochilmoqda...");
+                    loader.style.display = 'none';
                 }
-                // Loadingni olib tashlash
-                document.getElementById('loading-screen').style.display = 'none';
-            });
+            }, 2500);
+
+            // 3. Ma'lumotlarni yuklash (Cloud yoki Local)
+            loadData();
         }
 
-        // --- SAVE DATA (CLOUD) ---
+        function loadData() {
+            // Agar CloudStorage mavjud bo'lsa (Telegram ichida)
+            if (tg.CloudStorage && typeof tg.CloudStorage.getItem === 'function') {
+                tg.CloudStorage.getItem(['my_items_cloud', 'app_settings_cloud'], (error, value) => {
+                    if (!error && value) {
+                        if (value.my_items_cloud) items = JSON.parse(value.my_items_cloud);
+                        if (value.app_settings_cloud) settings = JSON.parse(value.app_settings_cloud);
+                        applySettings();
+                        renderList();
+                    } else {
+                        console.log("Cloud bo'sh yoki xato, LocalStorage tekshirilmoqda...");
+                        loadFromLocal(); // Cloud ishlamasa lokalga o'tamiz
+                    }
+                    document.getElementById('loading-screen').style.display = 'none';
+                });
+            } else {
+                // Brauzerda test qilish uchun
+                console.log("Telegram Cloud yo'q, LocalStorage ishlatilmoqda.");
+                loadFromLocal();
+                document.getElementById('loading-screen').style.display = 'none';
+            }
+        }
+
+        function loadFromLocal() {
+            const localItems = localStorage.getItem('my_items_cloud');
+            const localSettings = localStorage.getItem('app_settings_cloud');
+            if (localItems) items = JSON.parse(localItems);
+            if (localSettings) settings = JSON.parse(localSettings);
+            applySettings();
+            renderList();
+        }
+
+        // --- SAVE DATA (Hybrid: Cloud + Local) ---
         function saveData() {
-            // Har safar o'zgarish bo'lganda Cloudga yozamiz
             const dataStr = JSON.stringify(items);
-            tg.CloudStorage.setItem('my_items_cloud', dataStr, (err, stored) => {
-                if(err) console.log("Saqlashda xato");
-            });
+            
+            // 1. Localga yozish (tezkor)
+            localStorage.setItem('my_items_cloud', dataStr);
+
+            // 2. Cloudga yozish (agar mavjud bo'lsa)
+            if (tg.CloudStorage && typeof tg.CloudStorage.setItem === 'function') {
+                tg.CloudStorage.setItem('my_items_cloud', dataStr, (err) => {
+                    if(err) console.error("Cloud save error:", err);
+                });
+            }
         }
 
         function saveSettings() {
             const setStr = JSON.stringify(settings);
-            tg.CloudStorage.setItem('app_settings_cloud', setStr, (err, stored) => {});
+            localStorage.setItem('app_settings_cloud', setStr);
+            
+            if (tg.CloudStorage && typeof tg.CloudStorage.setItem === 'function') {
+                tg.CloudStorage.setItem('app_settings_cloud', setStr, (err) => {});
+            }
         }
 
         // --- UI FUNCTIONS ---
@@ -324,22 +117,32 @@
             if (settings.darkMode) document.body.classList.add('dark-mode');
             else document.body.classList.remove('dark-mode');
             
-            document.getElementById('toggle-dark').checked = settings.darkMode;
-            document.getElementById('toggle-haptic').checked = settings.haptic;
+            // Ranglarni yangilashga urinib ko'ramiz
+            try {
+                const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-color').trim();
+                tg.setHeaderColor(bgColor);
+                tg.setBackgroundColor(bgColor);
+            } catch(e){}
+
+            const tDark = document.getElementById('toggle-dark');
+            const tHap = document.getElementById('toggle-haptic');
+            if(tDark) tDark.checked = settings.darkMode;
+            if(tHap) tHap.checked = settings.haptic;
         }
 
         function navTo(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
+            const target = document.getElementById(pageId);
+            if(target) target.classList.add('active');
             
-            document.querySelectorAll('.nav-block').forEach(n => n.classList.remove('active'));
-            if(pageId === 'page-home') document.querySelectorAll('.nav-block')[0].classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if(pageId === 'page-home') document.querySelectorAll('.nav-item')[0]?.classList.add('active');
             if(pageId === 'page-stats-list') {
-                document.querySelectorAll('.nav-block')[1].classList.add('active');
+                document.querySelectorAll('.nav-item')[1]?.classList.add('active');
                 renderCompletedList();
             }
             if(pageId === 'page-profile') {
-                document.querySelectorAll('.nav-block')[2].classList.add('active');
+                document.querySelectorAll('.nav-item')[2]?.classList.add('active');
                 updateProfileStats();
             }
         }
@@ -359,7 +162,7 @@
             const daily = parseInt(document.getElementById('inp-daily').value);
 
             if (!name || !total || !daily) {
-                tg.showAlert("To'liq to'ldiring");
+                tg.showAlert("Iltimos, barcha maydonlarni to'ldiring");
                 return;
             }
 
@@ -376,7 +179,7 @@
                 history: {}
             };
             items.push(newItem);
-            saveData(); // Cloudga saqlash
+            saveData();
             
             document.getElementById('inp-name').value = '';
             document.getElementById('inp-total').value = '';
@@ -388,6 +191,7 @@
         function openView(id) {
             currentItemId = id;
             const item = items.find(i => i.id === id);
+            if(!item) return;
             document.getElementById('view-name').innerText = item.name;
             document.getElementById('view-goal').innerText = item.dailyGoal;
             updateWater(item);
@@ -398,8 +202,10 @@
         function closeView() {
             if (currentItemId && viewStartTime > 0) {
                 const item = items.find(i => i.id === currentItemId);
-                item.timeSpentMs += (Date.now() - viewStartTime);
-                saveData(); // Cloudga saqlash
+                if(item) {
+                    item.timeSpentMs += (Date.now() - viewStartTime);
+                    saveData();
+                }
             }
             viewStartTime = 0;
             navTo('page-home');
@@ -408,6 +214,7 @@
         function incrementProgress() {
             if (!currentItemId) return;
             const item = items.find(i => i.id === currentItemId);
+            if(!item) return;
 
             item.todayCount++;
             item.totalCount++;
@@ -416,17 +223,23 @@
             if (!item.history[todayKey]) item.history[todayKey] = 0;
             item.history[todayKey]++;
 
-            if (settings.haptic) tg.HapticFeedback.impactOccurred('light');
+            if (settings.haptic) {
+                try { tg.HapticFeedback.impactOccurred('medium'); } catch(e){}
+            }
 
             if (item.totalCount >= item.totalGoal) {
                 item.status = 'completed';
-                tg.showAlert("Tabriklaymiz! Tugatdingiz 🎉");
+                tg.showPopup({
+                    title: 'Tabriklaymiz! 🎉',
+                    message: `Siz "${item.name}" maqsadini muvaffaqiyatli yakunladingiz!`,
+                    buttons: [{type: 'ok'}]
+                });
                 closeView();
                 return;
             }
 
             updateWater(item);
-            saveData(); // Cloudga saqlash
+            saveData();
         }
 
         function updateWater(item) {
@@ -434,17 +247,36 @@
             document.getElementById('view-count').innerText = remaining;
             let percent = (item.todayCount / item.dailyGoal) * 100;
             if (percent > 100) percent = 100;
-            document.getElementById('water-wave').style.setProperty('--level', `${100 - percent}%`);
+            document.querySelectorAll('.wave').forEach(w => {
+                 w.style.setProperty('--level', `${110 - percent}%`);
+            });
         }
 
         function renderList() {
             const container = document.getElementById('list-container');
+            if(!container) return;
             container.innerHTML = '';
-            items.filter(i => i.status !== 'completed').forEach(item => {
+            const activeItems = items.filter(i => i.status !== 'completed');
+            
+            if (activeItems.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:var(--text-sub); margin-top:50px">Hozircha maqsadlar yo'q.<br>Yangi qo'shish uchun + tugmasini bosing.</div>`;
+            }
+
+            activeItems.forEach(item => {
                 checkDate(item);
+                const progress = item.totalGoal > 0 ? Math.min(100, Math.round((item.totalCount / item.totalGoal) * 100)) : 0;
+                
                 const div = document.createElement('div');
                 div.className = 'list-item';
-                div.innerHTML = `<span>${item.name}</span><span style="font-size:12px; opacity:0.7">${item.totalCount} / ${item.totalGoal}</span>`;
+                div.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:flex-start">
+                        <span>${item.name}</span>
+                        <div style="width:100%; height:4px; background:#eee; border-radius:2px; margin-top:5px; width:100px; overflow:hidden">
+                            <div style="height:100%; background:var(--primary-grad); width:${progress}%"></div>
+                        </div>
+                    </div>
+                    <span>${progress}%</span>
+                `;
                 div.onclick = () => openView(item.id);
                 container.appendChild(div);
             });
@@ -452,14 +284,15 @@
 
         function renderCompletedList() {
             const container = document.getElementById('completed-list-container');
+            if(!container) return;
             container.innerHTML = '';
             const list = items.filter(i => i.status === 'completed');
-            if (list.length === 0) container.innerHTML = "<div style='color:gray'>Ro'yxat bo'sh</div>";
+            if (list.length === 0) container.innerHTML = "<div style='color:var(--text-sub); text-align:center; margin-top:20px'>Tarix bo'sh</div>";
             
             list.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'list-item completed';
-                div.innerHTML = `<span>${item.name} ✅</span>`;
+                div.innerHTML = `<span>${item.name}</span> <span>Yakunlandi ✅</span>`;
                 div.onclick = () => openStatsDetail(item.id);
                 container.appendChild(div);
             });
@@ -472,14 +305,18 @@
                 totalReps += i.totalCount || 0;
                 if (i.status === 'completed') totalCompleted++;
             });
-            document.getElementById('total-reps-global').innerText = totalReps;
-            document.getElementById('total-completed-global').innerText = totalCompleted;
+            const elReps = document.getElementById('total-reps-global');
+            const elComp = document.getElementById('total-completed-global');
+            const elLvl = document.getElementById('user-level');
+            
+            if(elReps) elReps.innerText = totalReps;
+            if(elComp) elComp.innerText = totalCompleted;
             
             let level = "Boshlovchi";
             if (totalReps > 500) level = "Havaskor";
             if (totalReps > 2000) level = "Tajribali";
             if (totalReps > 10000) level = "Ustoz";
-            document.getElementById('user-level').innerText = level;
+            if(elLvl) elLvl.innerText = level;
         }
 
         function toggleDarkMode() {
@@ -495,19 +332,36 @@
 
         function openStatsDetail(id) {
             const item = items.find(i => i.id === id);
+            if(!item) return;
             document.getElementById('stat-title').innerText = item.name;
             document.getElementById('stat-time').innerText = formatTime(item.timeSpentMs);
             
             const ctx = document.getElementById('myChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
             
+            const isDark = document.body.classList.contains('dark-mode');
+            const textColor = isDark ? '#dfe6e9' : '#2d3436';
+
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(item.history),
-                    datasets: [{ label: 'Soni', data: Object.values(item.history), backgroundColor: '#9CCC65' }]
+                    datasets: [{ 
+                        label: 'Soni', 
+                        data: Object.values(item.history), 
+                        backgroundColor: '#6c5ce7',
+                        borderRadius: 6
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { beginAtZero: true, ticks: { color: textColor } },
+                        x: { ticks: { color: textColor } }
+                    } 
+                }
             });
             navTo('page-stats-detail');
         }
@@ -521,11 +375,10 @@
         }
 
         function formatTime(ms) {
+            if(!ms) return "0 daqiqa";
             let s = Math.floor(ms / 1000);
             let m = Math.floor(s / 60);
             let h = Math.floor(m / 60);
-            return [h, m%60, s%60].map(v => v < 10 ? "0" + v : v).join(":");
+            return (h > 0 ? h + " soat " : "") + (m%60) + " daqiqa";
         }
     </script>
-</body>
-</html>

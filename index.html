@@ -1,384 +1,492 @@
-<script>
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Zikr & Vocabulary Pro</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #667eea;
+            --grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg: #f4f6f8;
+            --text: #2d3436;
+            --card: #ffffff;
+            --border: #e1e4e8;
+            --nav-bg: rgba(255, 255, 255, 0.9);
+        }
+
+        body.dark-mode {
+            --primary: #764ba2;
+            --grad: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+            --bg: #121212;
+            --text: #ffffff;
+            --card: #1e1e1e;
+            --border: #333;
+            --nav-bg: rgba(30, 30, 30, 0.9);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg); color: var(--text);
+            margin: 0; padding: 0; height: 100vh;
+            display: flex; flex-direction: column; transition: 0.3s;
+        }
+
+        /* Loading */
+        #loader {
+            position: fixed; inset: 0; background: var(--bg); z-index: 1000;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+        }
+
+        /* Pages */
+        .page { display: none; flex: 1; flex-direction: column; padding: 20px; overflow-y: auto; padding-bottom: 90px; }
+        .page.active { display: flex; }
+
+        /* Components */
+        .card {
+            background: var(--card); border-radius: 16px; padding: 16px;
+            margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+        }
+        
+        .btn {
+            background: var(--grad); color: white; border: none; padding: 14px;
+            width: 100%; border-radius: 12px; font-weight: 600; margin-top: 10px; cursor: pointer;
+        }
+        
+        input {
+            width: 100%; padding: 14px; background: var(--bg); border: 1px solid var(--border);
+            border-radius: 12px; color: var(--text); margin-bottom: 10px; outline: none;
+        }
+
+        /* Water Animation */
+        .water-container {
+            width: 220px; height: 220px; margin: 30px auto; border-radius: 50%;
+            background: var(--card); border: 4px solid var(--border); position: relative;
+            overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .wave {
+            position: absolute; width: 200%; height: 200%; background: var(--primary);
+            left: -50%; top: var(--level, 110%); border-radius: 40%;
+            animation: spin 6s linear infinite; transition: top 0.5s; opacity: 0.8;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .counter-text { z-index: 10; font-size: 42px; font-weight: 800; color: var(--text); mix-blend-mode: difference;}
+
+        /* Navigation */
+        .nav {
+            position: fixed; bottom: 20px; left: 5%; width: 90%; height: 60px;
+            background: var(--nav-bg); backdrop-filter: blur(10px);
+            border-radius: 30px; display: flex; justify-content: space-around; align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--border); z-index: 100;
+        }
+        .nav-item { font-size: 22px; opacity: 0.5; transition: 0.3s; cursor: pointer; }
+        .nav-item.active { opacity: 1; transform: scale(1.2); color: var(--primary); }
+
+        /* Profile & Settings */
+        .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .avatar { width: 60px; height: 60px; border-radius: 50%; background: #ddd; object-fit: cover; }
+        .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border); }
+        
+        /* Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background: var(--primary); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <h3>Yuklanmoqda...</h3>
+    </div>
+
+    <div id="page-home" class="page active">
+        <h2 id="welcome-text">Assalomu alaykum</h2>
+        <div class="card" onclick="navTo('page-create')" style="text-align:center; color:var(--primary); font-weight:bold; cursor: pointer;">
+            + Yangi maqsad qo'shish
+        </div>
+        <div id="list-container"></div>
+    </div>
+
+    <div id="page-create" class="page">
+        <h2>Yangi Reja</h2>
+        <input type="text" id="inp-name" placeholder="Nomi (masalan: Istig'for)">
+        <input type="number" id="inp-total" placeholder="Jami maqsad (1000)" oninput="calcDaily()">
+        <input type="number" id="inp-days" placeholder="Necha kun (10)" oninput="calcDaily()">
+        <input type="text" id="inp-daily" readonly placeholder="Kuniga" style="opacity: 0.7;">
+        
+        <button class="btn" onclick="createItem()">Boshlash</button>
+        <button class="btn" style="background:transparent; color:var(--text); border:1px solid var(--border)" onclick="navTo('page-home')">Bekor qilish</button>
+    </div>
+
+    <div id="page-view" class="page">
+        <h2 id="view-title" style="text-align:center">...</h2>
+        <p style="text-align:center; opacity:0.7">Qolgan: <span id="view-remain">0</span></p>
+        
+        <div class="water-container" onclick="doCount()">
+            <div class="wave" id="wave"></div>
+            <div class="counter-text" id="view-count">0</div>
+        </div>
+        <p style="text-align:center; font-size:12px; opacity:0.5">Sanash uchun bosing</p>
+        
+        <button class="btn" style="margin-top:auto" onclick="closeView()">Orqaga</button>
+    </div>
+
+    <div id="page-stats" class="page">
+        <h2>Statistika</h2>
+        <p style="font-size:12px; opacity:0.7">Batafsil ko'rish uchun yakunlangan maqsad ustiga bosing</p>
+        <div id="completed-container"></div>
+    </div>
+
+    <div id="page-detail" class="page">
+        <h2 id="detail-title">Statistika</h2>
+        <div class="card">
+            <div style="font-size:12px; opacity:0.7">Umumiy sarflangan vaqt:</div>
+            <div style="font-size:24px; font-weight:bold; color:var(--primary)" id="detail-total-time">0 soat 0 daqiqa</div>
+        </div>
+        <div class="card" style="height: 300px;">
+            <canvas id="timeChart"></canvas>
+        </div>
+        <button class="btn" onclick="navTo('page-stats')">Orqaga</button>
+    </div>
+
+    <div id="page-profile" class="page">
+        <div class="profile-header">
+            <img src="" id="user-avatar" class="avatar" style="display:none">
+            <div id="no-avatar" class="avatar" style="display:flex; align-items:center; justify-content:center; font-size:24px">👤</div>
+            <div>
+                <div style="font-size:18px; font-weight:bold" id="user-name">Foydalanuvchi</div>
+                <div style="font-size:12px; opacity:0.7">ID: <span id="user-id">---</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="switch-row">
+                <span>Tungi rejim 🌙</span>
+                <label class="switch">
+                    <input type="checkbox" id="tg-dark" onchange="toggleDark()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="switch-row" style="border:none">
+                <span>Vibratsiya 📳</span>
+                <label class="switch">
+                    <input type="checkbox" id="tg-vib" onchange="toggleVib()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <div style="text-align:center; margin-top:30px; opacity:0.5; font-size:12px">
+            Versiya 2.1 Fixed
+        </div>
+    </div>
+
+    <div class="nav">
+        <div class="nav-item active" onclick="navTo('page-home')">🏠</div>
+        <div class="nav-item" onclick="navTo('page-stats')">📊</div>
+        <div class="nav-item" onclick="navTo('page-profile')">👤</div>
+    </div>
+
+    <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        
-        // Rangni sozlash (xatolik bo'lmasligi uchun try-catch)
-        try {
-            tg.setHeaderColor(getComputedStyle(document.body).getPropertyValue('--bg-color').trim());
-            tg.setBackgroundColor(getComputedStyle(document.body).getPropertyValue('--bg-color').trim());
-        } catch (e) { console.log("Rang sozlashda xato"); }
 
         // --- GLOBAL VARIABLES ---
         let items = [];
-        let settings = { darkMode: false, haptic: true };
-        
-        let currentItemId = null;
-        let viewStartTime = 0;
+        let settings = { dark: false, vib: true };
+        let currentId = null;
+        let sessionStart = 0;
         let chartInstance = null;
 
-        // --- APP START ---
-        initApp();
-
-        function initApp() {
-            // 1. User ma'lumotlarini olish
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                const user = tg.initDataUnsafe.user;
-                document.getElementById('user-name').innerText = user.first_name;
-                document.getElementById('home-name').innerText = user.first_name;
-                if (user.photo_url) {
-                    const els = ['user-photo', 'home-photo'];
-                    const phs = ['user-photo-placeholder', 'home-photo-ph'];
-                    els.forEach(id => {
-                        const img = document.getElementById(id);
-                        if(img) {
-                            img.src = user.photo_url;
-                            img.style.display = 'block';
-                        }
-                    });
-                    phs.forEach(id => {
-                        const p = document.getElementById(id);
-                        if(p) p.style.display = 'none';
-                    });
-                }
-            }
-
-            // 2. Majburiy ochish (Sug'urta)
-            // Agar CloudStorage 2 soniyada javob bermasa, baribir ilovani ochamiz
-            setTimeout(() => {
-                const loader = document.getElementById('loading-screen');
-                if (loader && loader.style.display !== 'none') {
-                    console.warn("CloudStorage kechikdi, majburiy ochilmoqda...");
-                    loader.style.display = 'none';
-                }
-            }, 2500);
-
-            // 3. Ma'lumotlarni yuklash (Cloud yoki Local)
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 1500);
+            
             loadData();
-        }
+            initUser();
+        };
 
-        function loadData() {
-            // Agar CloudStorage mavjud bo'lsa (Telegram ichida)
-            if (tg.CloudStorage && typeof tg.CloudStorage.getItem === 'function') {
-                tg.CloudStorage.getItem(['my_items_cloud', 'app_settings_cloud'], (error, value) => {
-                    if (!error && value) {
-                        if (value.my_items_cloud) items = JSON.parse(value.my_items_cloud);
-                        if (value.app_settings_cloud) settings = JSON.parse(value.app_settings_cloud);
-                        applySettings();
-                        renderList();
-                    } else {
-                        console.log("Cloud bo'sh yoki xato, LocalStorage tekshirilmoqda...");
-                        loadFromLocal(); // Cloud ishlamasa lokalga o'tamiz
-                    }
-                    document.getElementById('loading-screen').style.display = 'none';
-                });
-            } else {
-                // Brauzerda test qilish uchun
-                console.log("Telegram Cloud yo'q, LocalStorage ishlatilmoqda.");
-                loadFromLocal();
-                document.getElementById('loading-screen').style.display = 'none';
+        function initUser() {
+            if(tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const u = tg.initDataUnsafe.user;
+                document.getElementById('user-name').innerText = u.first_name + (u.last_name ? " " + u.last_name : "");
+                document.getElementById('welcome-text').innerText = "Salom, " + u.first_name;
+                document.getElementById('user-id').innerText = u.id;
+                
+                if(u.photo_url) {
+                    document.getElementById('user-avatar').src = u.photo_url;
+                    document.getElementById('user-avatar').style.display = 'block';
+                    document.getElementById('no-avatar').style.display = 'none';
+                }
             }
         }
 
-        function loadFromLocal() {
-            const localItems = localStorage.getItem('my_items_cloud');
-            const localSettings = localStorage.getItem('app_settings_cloud');
-            if (localItems) items = JSON.parse(localItems);
-            if (localSettings) settings = JSON.parse(localSettings);
+        // --- DATA MANAGEMENT ---
+        function loadData() {
+            const d = localStorage.getItem('zikr_data_v2');
+            const s = localStorage.getItem('zikr_settings_v2');
+            
+            if(d) items = JSON.parse(d);
+            if(s) settings = JSON.parse(s);
+            
             applySettings();
             renderList();
         }
 
-        // --- SAVE DATA (Hybrid: Cloud + Local) ---
         function saveData() {
-            const dataStr = JSON.stringify(items);
-            
-            // 1. Localga yozish (tezkor)
-            localStorage.setItem('my_items_cloud', dataStr);
-
-            // 2. Cloudga yozish (agar mavjud bo'lsa)
-            if (tg.CloudStorage && typeof tg.CloudStorage.setItem === 'function') {
-                tg.CloudStorage.setItem('my_items_cloud', dataStr, (err) => {
-                    if(err) console.error("Cloud save error:", err);
-                });
-            }
+            localStorage.setItem('zikr_data_v2', JSON.stringify(items));
         }
 
         function saveSettings() {
-            const setStr = JSON.stringify(settings);
-            localStorage.setItem('app_settings_cloud', setStr);
-            
-            if (tg.CloudStorage && typeof tg.CloudStorage.setItem === 'function') {
-                tg.CloudStorage.setItem('app_settings_cloud', setStr, (err) => {});
-            }
+            localStorage.setItem('zikr_settings_v2', JSON.stringify(settings));
         }
 
-        // --- UI FUNCTIONS ---
+        // --- SETTINGS ---
         function applySettings() {
-            if (settings.darkMode) document.body.classList.add('dark-mode');
+            if(settings.dark) document.body.classList.add('dark-mode');
             else document.body.classList.remove('dark-mode');
-            
-            // Ranglarni yangilashga urinib ko'ramiz
+            document.getElementById('tg-dark').checked = settings.dark;
+            document.getElementById('tg-vib').checked = settings.vib;
+
             try {
-                const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-color').trim();
-                tg.setHeaderColor(bgColor);
-                tg.setBackgroundColor(bgColor);
+                const color = getComputedStyle(document.body).getPropertyValue('--bg').trim();
+                tg.setHeaderColor(color);
+                tg.setBackgroundColor(color);
             } catch(e){}
-
-            const tDark = document.getElementById('toggle-dark');
-            const tHap = document.getElementById('toggle-haptic');
-            if(tDark) tDark.checked = settings.darkMode;
-            if(tHap) tHap.checked = settings.haptic;
         }
 
-        function navTo(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            const target = document.getElementById(pageId);
-            if(target) target.classList.add('active');
-            
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            if(pageId === 'page-home') document.querySelectorAll('.nav-item')[0]?.classList.add('active');
-            if(pageId === 'page-stats-list') {
-                document.querySelectorAll('.nav-item')[1]?.classList.add('active');
-                renderCompletedList();
-            }
-            if(pageId === 'page-profile') {
-                document.querySelectorAll('.nav-item')[2]?.classList.add('active');
-                updateProfileStats();
-            }
-        }
-
-        // --- LOGIC ---
-        function calculateDaily() {
-            const total = parseFloat(document.getElementById('inp-total').value);
-            const days = parseFloat(document.getElementById('inp-duration').value);
-            if (total && days > 0) {
-                document.getElementById('inp-daily').value = Math.ceil(total / days);
-            }
-        }
-
-        function createItem() {
-            const name = document.getElementById('inp-name').value;
-            const total = parseInt(document.getElementById('inp-total').value);
-            const daily = parseInt(document.getElementById('inp-daily').value);
-
-            if (!name || !total || !daily) {
-                tg.showAlert("Iltimos, barcha maydonlarni to'ldiring");
-                return;
-            }
-
-            const newItem = {
-                id: Date.now(),
-                name: name,
-                totalGoal: total,
-                dailyGoal: daily,
-                totalCount: 0,
-                todayCount: 0,
-                lastDate: new Date().toDateString(),
-                status: 'active',
-                timeSpentMs: 0,
-                history: {}
-            };
-            items.push(newItem);
-            saveData();
-            
-            document.getElementById('inp-name').value = '';
-            document.getElementById('inp-total').value = '';
-            document.getElementById('inp-duration').value = '';
-            document.getElementById('inp-daily').value = '';
-            navTo('page-home');
-        }
-
-        function openView(id) {
-            currentItemId = id;
-            const item = items.find(i => i.id === id);
-            if(!item) return;
-            document.getElementById('view-name').innerText = item.name;
-            document.getElementById('view-goal').innerText = item.dailyGoal;
-            updateWater(item);
-            viewStartTime = Date.now();
-            navTo('page-view');
-        }
-
-        function closeView() {
-            if (currentItemId && viewStartTime > 0) {
-                const item = items.find(i => i.id === currentItemId);
-                if(item) {
-                    item.timeSpentMs += (Date.now() - viewStartTime);
-                    saveData();
-                }
-            }
-            viewStartTime = 0;
-            navTo('page-home');
-        }
-
-        function incrementProgress() {
-            if (!currentItemId) return;
-            const item = items.find(i => i.id === currentItemId);
-            if(!item) return;
-
-            item.todayCount++;
-            item.totalCount++;
-
-            const todayKey = new Date().toISOString().split('T')[0];
-            if (!item.history[todayKey]) item.history[todayKey] = 0;
-            item.history[todayKey]++;
-
-            if (settings.haptic) {
-                try { tg.HapticFeedback.impactOccurred('medium'); } catch(e){}
-            }
-
-            if (item.totalCount >= item.totalGoal) {
-                item.status = 'completed';
-                tg.showPopup({
-                    title: 'Tabriklaymiz! 🎉',
-                    message: `Siz "${item.name}" maqsadini muvaffaqiyatli yakunladingiz!`,
-                    buttons: [{type: 'ok'}]
-                });
-                closeView();
-                return;
-            }
-
-            updateWater(item);
-            saveData();
-        }
-
-        function updateWater(item) {
-            const remaining = Math.max(0, item.dailyGoal - item.todayCount);
-            document.getElementById('view-count').innerText = remaining;
-            let percent = (item.todayCount / item.dailyGoal) * 100;
-            if (percent > 100) percent = 100;
-            document.querySelectorAll('.wave').forEach(w => {
-                 w.style.setProperty('--level', `${110 - percent}%`);
-            });
-        }
-
-        function renderList() {
-            const container = document.getElementById('list-container');
-            if(!container) return;
-            container.innerHTML = '';
-            const activeItems = items.filter(i => i.status !== 'completed');
-            
-            if (activeItems.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color:var(--text-sub); margin-top:50px">Hozircha maqsadlar yo'q.<br>Yangi qo'shish uchun + tugmasini bosing.</div>`;
-            }
-
-            activeItems.forEach(item => {
-                checkDate(item);
-                const progress = item.totalGoal > 0 ? Math.min(100, Math.round((item.totalCount / item.totalGoal) * 100)) : 0;
-                
-                const div = document.createElement('div');
-                div.className = 'list-item';
-                div.innerHTML = `
-                    <div style="display:flex; flex-direction:column; align-items:flex-start">
-                        <span>${item.name}</span>
-                        <div style="width:100%; height:4px; background:#eee; border-radius:2px; margin-top:5px; width:100px; overflow:hidden">
-                            <div style="height:100%; background:var(--primary-grad); width:${progress}%"></div>
-                        </div>
-                    </div>
-                    <span>${progress}%</span>
-                `;
-                div.onclick = () => openView(item.id);
-                container.appendChild(div);
-            });
-        }
-
-        function renderCompletedList() {
-            const container = document.getElementById('completed-list-container');
-            if(!container) return;
-            container.innerHTML = '';
-            const list = items.filter(i => i.status === 'completed');
-            if (list.length === 0) container.innerHTML = "<div style='color:var(--text-sub); text-align:center; margin-top:20px'>Tarix bo'sh</div>";
-            
-            list.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'list-item completed';
-                div.innerHTML = `<span>${item.name}</span> <span>Yakunlandi ✅</span>`;
-                div.onclick = () => openStatsDetail(item.id);
-                container.appendChild(div);
-            });
-        }
-
-        function updateProfileStats() {
-            let totalReps = 0;
-            let totalCompleted = 0;
-            items.forEach(i => {
-                totalReps += i.totalCount || 0;
-                if (i.status === 'completed') totalCompleted++;
-            });
-            const elReps = document.getElementById('total-reps-global');
-            const elComp = document.getElementById('total-completed-global');
-            const elLvl = document.getElementById('user-level');
-            
-            if(elReps) elReps.innerText = totalReps;
-            if(elComp) elComp.innerText = totalCompleted;
-            
-            let level = "Boshlovchi";
-            if (totalReps > 500) level = "Havaskor";
-            if (totalReps > 2000) level = "Tajribali";
-            if (totalReps > 10000) level = "Ustoz";
-            if(elLvl) elLvl.innerText = level;
-        }
-
-        function toggleDarkMode() {
-            settings.darkMode = !settings.darkMode;
+        function toggleDark() {
+            settings.dark = !settings.dark;
             applySettings();
             saveSettings();
         }
 
-        function toggleHaptic() {
-            settings.haptic = !settings.haptic;
+        function toggleVib() {
+            settings.vib = !settings.vib;
             saveSettings();
         }
 
-        function openStatsDetail(id) {
+        // --- NAVIGATION ---
+        function navTo(id) {
+            // Sahifalarni almashtirish
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            
+            // Navigatsiya ikonlarini yangilash
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            if(id === 'page-home') {
+                document.querySelectorAll('.nav-item')[0].classList.add('active');
+                renderList(); // <--- MUHIM: Homega qaytganda ro'yxatni yangilash
+            }
+            if(id === 'page-stats' || id === 'page-detail') {
+                document.querySelectorAll('.nav-item')[1].classList.add('active');
+                if(id === 'page-stats') renderCompleted();
+            }
+            if(id === 'page-profile') document.querySelectorAll('.nav-item')[2].classList.add('active');
+        }
+
+        // --- LOGIC: CREATE ---
+        function calcDaily() {
+            const t = parseFloat(document.getElementById('inp-total').value);
+            const d = parseFloat(document.getElementById('inp-days').value);
+            if(t && d) document.getElementById('inp-daily').value = Math.ceil(t/d);
+        }
+
+        function createItem() {
+            const nameEl = document.getElementById('inp-name');
+            const totalEl = document.getElementById('inp-total');
+            const daysEl = document.getElementById('inp-days');
+            const dailyEl = document.getElementById('inp-daily');
+
+            const name = nameEl.value;
+            const total = parseInt(totalEl.value);
+            const daily = parseInt(dailyEl.value);
+            
+            if(!name || isNaN(total)) {
+                tg.showAlert("Nom va Jami sonini to'g'ri kiriting!");
+                return;
+            }
+            
+            items.push({
+                id: Date.now(),
+                name: name,
+                total: total,
+                daily: daily || total, // Agar kun kiritilmasa, kunlik reja jami bilan teng
+                count: 0,
+                status: 'active',
+                totalTimeMs: 0,
+                dailyTimeHistory: {}
+            });
+            saveData();
+            
+            // Inputlarni tozalash
+            nameEl.value = '';
+            totalEl.value = '';
+            daysEl.value = '';
+            dailyEl.value = '';
+            
+            // Ro'yxatni yangilab Homega o'tish
+            renderList(); 
+            navTo('page-home');
+        }
+
+        // --- LOGIC: LIST & VIEW ---
+        function renderList() {
+            const list = document.getElementById('list-container');
+            list.innerHTML = '';
+            
+            const activeItems = items.filter(i => i.status !== 'completed');
+            
+            if(activeItems.length === 0) {
+                list.innerHTML = `<div style="text-align:center; opacity:0.6; margin-top:20px;">Hozircha maqsadlar yo'q</div>`;
+                return;
+            }
+
+            activeItems.forEach(item => {
+                const p = Math.floor((item.count / item.total) * 100);
+                list.innerHTML += `
+                    <div class="card" onclick="openView(${item.id})" style="cursor:pointer">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px">
+                            <b>${item.name}</b>
+                            <span style="font-weight:bold; color:var(--primary)">${p}%</span>
+                        </div>
+                        <div style="background:#eee; height:6px; border-radius:3px; overflow:hidden">
+                            <div style="width:${p}%; background:var(--grad); height:100%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openView(id) {
+            currentId = id;
+            sessionStart = Date.now();
+            
             const item = items.find(i => i.id === id);
-            if(!item) return;
-            document.getElementById('stat-title').innerText = item.name;
-            document.getElementById('stat-time').innerText = formatTime(item.timeSpentMs);
+            document.getElementById('view-title').innerText = item.name;
+            updateUI(item);
+            navTo('page-view');
+        }
+
+        function closeView() {
+            if(currentId && sessionStart > 0) {
+                const diff = Date.now() - sessionStart;
+                const item = items.find(i => i.id === currentId);
+                
+                if(item) {
+                    item.totalTimeMs += diff;
+                    const dateKey = new Date().toISOString().split('T')[0];
+                    if(!item.dailyTimeHistory) item.dailyTimeHistory = {};
+                    if(!item.dailyTimeHistory[dateKey]) item.dailyTimeHistory[dateKey] = 0;
+                    item.dailyTimeHistory[dateKey] += diff;
+                    saveData();
+                }
+            }
+            sessionStart = 0;
+            currentId = null;
+            navTo('page-home');
+        }
+
+        function doCount() {
+            if(!currentId) return;
+            const item = items.find(i => i.id === currentId);
             
-            const ctx = document.getElementById('myChart').getContext('2d');
-            if (chartInstance) chartInstance.destroy();
+            item.count++;
+            if(settings.vib) {
+                try { tg.HapticFeedback.impactOccurred('medium'); } catch(e){}
+            }
             
-            const isDark = document.body.classList.contains('dark-mode');
-            const textColor = isDark ? '#dfe6e9' : '#2d3436';
+            if(item.count >= item.total) {
+                item.status = 'completed';
+                tg.showPopup({ title: "Tabriklaymiz!", message: "Maqsadga yetdingiz! 🎉", buttons: [{type:"ok"}] });
+                closeView();
+            } else {
+                updateUI(item);
+                saveData();
+            }
+        }
+
+        function updateUI(item) {
+            const left = item.total - item.count;
+            document.getElementById('view-count').innerText = item.count;
+            document.getElementById('view-remain').innerText = left;
+            
+            let p = (item.count / item.total) * 100;
+            if(p > 100) p = 100;
+            document.getElementById('wave').style.setProperty('--level', (110 - p) + "%");
+        }
+
+        // --- STATS & CHART ---
+        function renderCompleted() {
+            const c = document.getElementById('completed-container');
+            c.innerHTML = '';
+            const list = items.filter(i => i.status === 'completed');
+            
+            if(list.length === 0) c.innerHTML = '<p style="text-align:center; opacity:0.5">Hozircha tugatilganlar yo\'q</p>';
+
+            list.forEach(item => {
+                c.innerHTML += `
+                    <div class="card" onclick="showDetails(${item.id})" style="background:linear-gradient(to right, rgba(0,255,0,0.1), transparent); cursor:pointer">
+                        <b>${item.name} ✅</b>
+                        <div style="font-size:12px; opacity:0.7">Batafsil statistika uchun bosing 👉</div>
+                    </div>
+                `;
+            });
+        }
+
+        function showDetails(id) {
+            const item = items.find(i => i.id === id);
+            document.getElementById('detail-title').innerText = item.name;
+            document.getElementById('detail-total-time').innerText = msToTime(item.totalTimeMs || 0);
+            
+            navTo('page-detail');
+            
+            if(chartInstance) chartInstance.destroy();
+            const ctx = document.getElementById('timeChart').getContext('2d');
+            
+            const labels = Object.keys(item.dailyTimeHistory || {});
+            const data = Object.values(item.dailyTimeHistory || {}).map(ms => (ms / 60000).toFixed(1));
+
+            const color = settings.dark ? '#fff' : '#000';
 
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(item.history),
-                    datasets: [{ 
-                        label: 'Soni', 
-                        data: Object.values(item.history), 
-                        backgroundColor: '#6c5ce7',
-                        borderRadius: 6
+                    labels: labels,
+                    datasets: [{
+                        label: 'Vaqt (daqiqa)',
+                        data: data,
+                        backgroundColor: '#667eea',
+                        borderRadius: 5
                     }]
                 },
-                options: { 
-                    responsive: true, 
+                options: {
+                    responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { 
-                        y: { beginAtZero: true, ticks: { color: textColor } },
-                        x: { ticks: { color: textColor } }
-                    } 
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: color } },
+                        x: { ticks: { color: color } }
+                    },
+                    plugins: { legend: { labels: { color: color } } }
                 }
             });
-            navTo('page-stats-detail');
         }
 
-        function checkDate(item) {
-            const today = new Date().toDateString();
-            if (item.lastDate !== today) {
-                item.todayCount = 0;
-                item.lastDate = today;
-            }
+        function msToTime(ms) {
+            const seconds = Math.floor((ms / 1000) % 60);
+            const minutes = Math.floor((ms / (1000 * 60)) % 60);
+            const hours = Math.floor((ms / (1000 * 60 * 60)));
+            return (hours > 0 ? hours + " soat " : "") + minutes + " daqiqa " + seconds + " soniya";
         }
 
-        function formatTime(ms) {
-            if(!ms) return "0 daqiqa";
-            let s = Math.floor(ms / 1000);
-            let m = Math.floor(s / 60);
-            let h = Math.floor(m / 60);
-            return (h > 0 ? h + " soat " : "") + (m%60) + " daqiqa";
-        }
     </script>
+</body>
+</html>

@@ -3,28 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Zikr & Vocabulary Pro</title>
+    <title>Zikr & Vocabulary Final</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary: #667eea;
-            --grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --bg: #f4f6f8;
-            --text: #2d3436;
+            --primary: #5856D6; 
+            --grad: linear-gradient(135deg, #5856D6 0%, #764ba2 100%);
+            --danger: #ff4757;
+            --bg: #f2f2f7;
+            --text: #000000;
             --card: #ffffff;
-            --border: #e1e4e8;
-            --nav-bg: rgba(255, 255, 255, 0.9);
+            --border: #c6c6c8;
+            --nav-bg: rgba(255, 255, 255, 0.95);
+            --switch-off: #e9e9ea;
         }
 
         body.dark-mode {
-            --primary: #764ba2;
-            --grad: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
-            --bg: #121212;
+            --primary: #5e5ce6;
+            --grad: linear-gradient(135deg, #5e5ce6 0%, #a29bfe 100%);
+            --bg: #000000;
             --text: #ffffff;
-            --card: #1e1e1e;
-            --border: #333;
-            --nav-bg: rgba(30, 30, 30, 0.9);
+            --card: #1c1c1e;
+            --border: #38383a;
+            --nav-bg: rgba(30, 30, 30, 0.95);
+            --switch-off: #39393d;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -35,38 +38,56 @@
             display: flex; flex-direction: column; transition: 0.3s;
         }
 
-        /* Loading */
         #loader {
             position: fixed; inset: 0; background: var(--bg); z-index: 1000;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
         }
 
-        /* Pages */
-        .page { display: none; flex: 1; flex-direction: column; padding: 20px; overflow-y: auto; padding-bottom: 90px; }
+        .page { display: none; flex: 1; flex-direction: column; padding: 20px; overflow-y: auto; padding-bottom: 90px; align-items: center; }
         .page.active { display: flex; }
 
-        /* Components */
         .card {
-            background: var(--card); border-radius: 16px; padding: 16px;
-            margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
+            background: var(--card); border-radius: 20px; padding: 20px; width: 100%;
+            margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            text-align: center; transition: transform 0.2s;
         }
+        .card:active { transform: scale(0.99); }
+        
+        .card.locked {
+            opacity: 0.6; background: rgba(128,128,128,0.1); cursor: not-allowed;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* --- SETTINGS STYLE --- */
+        .settings-group { width: 100%; background: var(--card); border-radius: 12px; overflow: hidden; margin-top: 10px; }
+        .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: var(--card); transition: 0.2s; }
+        .switch-row:not(:last-child)::after {
+            content: ''; position: absolute; bottom: 0; right: 0; width: calc(100% - 20px); height: 1px; background-color: var(--border); opacity: 0.5;
+        }
+        .switch-row:not(:last-child) { position: relative; }
+
+        .switch { position: relative; display: inline-block; width: 51px; height: 31px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--switch-off); transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
         
         .btn {
-            background: var(--grad); color: white; border: none; padding: 14px;
-            width: 100%; border-radius: 12px; font-weight: 600; margin-top: 10px; cursor: pointer;
+            background: var(--grad); color: white; border: none; padding: 15px;
+            width: 100%; border-radius: 15px; font-weight: 600; font-size: 16px;
+            margin-top: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(88, 86, 214, 0.3);
         }
+        .btn.danger { background: var(--danger); box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3); }
         
-        input {
-            width: 100%; padding: 14px; background: var(--bg); border: 1px solid var(--border);
-            border-radius: 12px; color: var(--text); margin-bottom: 10px; outline: none;
-        }
+        input { width: 100%; padding: 15px; background: var(--card); border: none; border-radius: 15px; color: var(--text); margin-bottom: 12px; outline: none; text-align: center; }
 
         /* Water Animation */
         .water-container {
-            width: 220px; height: 220px; margin: 30px auto; border-radius: 50%;
+            width: 240px; height: 240px; margin: 30px auto; border-radius: 50%;
             background: var(--card); border: 4px solid var(--border); position: relative;
             overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
         }
         .wave {
             position: absolute; width: 200%; height: 200%; background: var(--primary);
@@ -74,119 +95,113 @@
             animation: spin 6s linear infinite; transition: top 0.5s; opacity: 0.8;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        .counter-text { z-index: 10; font-size: 42px; font-weight: 800; color: var(--text); mix-blend-mode: difference;}
+        
+        .counter-text { z-index: 10; font-size: 48px; font-weight: 800; color: var(--text); mix-blend-mode: exclusion; transition: font-size 0.3s; }
 
         /* Navigation */
         .nav {
-            position: fixed; bottom: 20px; left: 5%; width: 90%; height: 60px;
-            background: var(--nav-bg); backdrop-filter: blur(10px);
-            border-radius: 30px; display: flex; justify-content: space-around; align-items: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid var(--border); z-index: 100;
+            position: fixed; bottom: 25px; left: 5%; width: 90%; height: 65px;
+            background: var(--nav-bg); backdrop-filter: blur(15px);
+            border-radius: 35px; display: flex; justify-content: space-around; align-items: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); z-index: 100;
         }
-        .nav-item { font-size: 22px; opacity: 0.5; transition: 0.3s; cursor: pointer; }
-        .nav-item.active { opacity: 1; transform: scale(1.2); color: var(--primary); }
+        .nav-item { font-size: 24px; opacity: 0.4; transition: 0.3s; cursor: pointer; }
+        .nav-item.active { opacity: 1; transform: translateY(-5px); color: var(--primary); }
 
-        /* Profile & Settings */
-        .profile-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-        .avatar { width: 60px; height: 60px; border-radius: 50%; background: #ddd; object-fit: cover; }
-        .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border); }
-        
-        /* Toggle Switch */
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background: var(--primary); }
-        input:checked + .slider:before { transform: translateX(24px); }
+        .header-nav { width: 100%; display: flex; align-items: center; margin-bottom: 20px; }
+        .back-btn { font-size: 24px; padding-right: 15px; cursor: pointer; }
 
     </style>
 </head>
 <body>
 
-    <div id="loader">
-        <h3>Yuklanmoqda...</h3>
-    </div>
+    <div id="loader"><h3>Yuklanmoqda...</h3></div>
 
     <div id="page-home" class="page active">
-        <h2 id="welcome-text">Assalomu alaykum</h2>
-        <div class="card" onclick="navTo('page-create')" style="text-align:center; color:var(--primary); font-weight:bold; cursor: pointer;">
+        <h2 id="welcome-text" style="text-align:center">Assalomu alaykum</h2>
+        <div class="card" onclick="navTo('page-create')" style="color:var(--primary); font-weight:bold; cursor:pointer">
             + Yangi maqsad qo'shish
         </div>
-        <div id="list-container"></div>
+        <div id="list-container" style="width:100%"></div>
     </div>
 
     <div id="page-create" class="page">
         <h2>Yangi Reja</h2>
         <input type="text" id="inp-name" placeholder="Nomi (masalan: Istig'for)">
-        <input type="number" id="inp-total" placeholder="Jami maqsad (1000)" oninput="calcDaily()">
-        <input type="number" id="inp-days" placeholder="Necha kun (10)" oninput="calcDaily()">
-        <input type="text" id="inp-daily" readonly placeholder="Kuniga" style="opacity: 0.7;">
-        
+        <input type="number" id="inp-total" placeholder="Jami soni (100)" oninput="calcDaily()">
+        <input type="number" id="inp-days" placeholder="Kunlar (10)" oninput="calcDaily()">
+        <div style="width:100%; text-align:center; margin:10px 0; opacity:0.8; font-size:14px">Kuniga: <b id="lbl-daily">0</b> ta</div>
         <button class="btn" onclick="createItem()">Boshlash</button>
         <button class="btn" style="background:transparent; color:var(--text); border:1px solid var(--border)" onclick="navTo('page-home')">Bekor qilish</button>
     </div>
 
+    <div id="page-days" class="page">
+        <div class="header-nav">
+            <span class="back-btn" onclick="navTo('page-home')">⬅️</span>
+            <h3 id="days-title" style="margin:0">Kunlar</h3>
+        </div>
+        <div id="days-container" style="width:100%"></div>
+    </div>
+
     <div id="page-view" class="page">
-        <h2 id="view-title" style="text-align:center">...</h2>
-        <p style="text-align:center; opacity:0.7">Qolgan: <span id="view-remain">0</span></p>
+        <div class="header-nav">
+            <span class="back-btn" onclick="closeView()">⬅️</span>
+            <h3 id="view-title" style="margin:0">...</h3>
+        </div>
+        <p style="text-align:center; opacity:0.7">Bugungi reja: <b id="view-goal">0</b></p>
         
         <div class="water-container" onclick="doCount()">
             <div class="wave" id="wave"></div>
             <div class="counter-text" id="view-count">0</div>
         </div>
         <p style="text-align:center; font-size:12px; opacity:0.5">Sanash uchun bosing</p>
-        
-        <button class="btn" style="margin-top:auto" onclick="closeView()">Orqaga</button>
     </div>
 
     <div id="page-stats" class="page">
         <h2>Statistika</h2>
-        <p style="font-size:12px; opacity:0.7">Batafsil ko'rish uchun yakunlangan maqsad ustiga bosing</p>
-        <div id="completed-container"></div>
+        <div id="completed-container" style="width:100%"></div>
     </div>
 
     <div id="page-detail" class="page">
-        <h2 id="detail-title">Statistika</h2>
+        <div class="header-nav">
+            <span class="back-btn" onclick="navTo('page-stats')">⬅️</span>
+            <h3 id="detail-title" style="margin:0">Statistika</h3>
+        </div>
         <div class="card">
             <div style="font-size:12px; opacity:0.7">Umumiy sarflangan vaqt:</div>
-            <div style="font-size:24px; font-weight:bold; color:var(--primary)" id="detail-total-time">0 soat 0 daqiqa</div>
+            <div style="font-size:24px; font-weight:bold; color:var(--primary)" id="detail-time">0 soat</div>
         </div>
-        <div class="card" style="height: 300px;">
+        <div class="card" style="height: 250px;">
             <canvas id="timeChart"></canvas>
         </div>
-        <button class="btn" onclick="navTo('page-stats')">Orqaga</button>
+        <button class="btn danger" onclick="deleteStatsItem()">🗑 Statistikani o'chirish</button>
     </div>
 
     <div id="page-profile" class="page">
-        <div class="profile-header">
-            <img src="" id="user-avatar" class="avatar" style="display:none">
-            <div id="no-avatar" class="avatar" style="display:flex; align-items:center; justify-content:center; font-size:24px">👤</div>
-            <div>
-                <div style="font-size:18px; font-weight:bold" id="user-name">Foydalanuvchi</div>
-                <div style="font-size:12px; opacity:0.7">ID: <span id="user-id">---</span></div>
-            </div>
+        <h2>Profil</h2>
+        <div style="width:80px; height:80px; background:#ddd; border-radius:50%; margin:20px; display:flex; align-items:center; justify-content:center; font-size:30px; object-fit:cover; overflow:hidden">
+             <img id="u-ava-img" src="" style="width:100%; height:100%; display:none">
+             <span id="u-ava-ph">👤</span>
         </div>
-
-        <div class="card">
+        <h3 id="u-name" style="margin-top:0">Foydalanuvchi</h3>
+        
+        <div class="settings-group">
             <div class="switch-row">
-                <span>Tungi rejim 🌙</span>
+                <span style="font-size:17px">Tungi rejim 🌙</span>
                 <label class="switch">
                     <input type="checkbox" id="tg-dark" onchange="toggleDark()">
                     <span class="slider"></span>
                 </label>
             </div>
-            <div class="switch-row" style="border:none">
-                <span>Vibratsiya 📳</span>
+            <div class="switch-row">
+                <span style="font-size:17px">Vibratsiya 📳</span>
                 <label class="switch">
                     <input type="checkbox" id="tg-vib" onchange="toggleVib()">
                     <span class="slider"></span>
                 </label>
             </div>
         </div>
-        
-        <div style="text-align:center; margin-top:30px; opacity:0.5; font-size:12px">
-            Versiya 2.1 Fixed
-        </div>
+        <p style="margin-top:20px; opacity:0.4; font-size:12px">v4.0 Final Fix</p>
     </div>
 
     <div class="nav">
@@ -199,17 +214,15 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // --- GLOBAL VARIABLES ---
         let items = [];
         let settings = { dark: false, vib: true };
-        let currentId = null;
+        let currentItemId = null;
+        let currentDayIndex = null;
         let sessionStart = 0;
         let chartInstance = null;
 
-        // --- INITIALIZATION ---
         window.onload = function() {
-            setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 1500);
-            
+            setTimeout(() => document.getElementById('loader').style.display = 'none', 1000);
             loadData();
             initUser();
         };
@@ -217,275 +230,250 @@
         function initUser() {
             if(tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 const u = tg.initDataUnsafe.user;
-                document.getElementById('user-name').innerText = u.first_name + (u.last_name ? " " + u.last_name : "");
+                document.getElementById('u-name').innerText = u.first_name;
                 document.getElementById('welcome-text').innerText = "Salom, " + u.first_name;
-                document.getElementById('user-id').innerText = u.id;
-                
                 if(u.photo_url) {
-                    document.getElementById('user-avatar').src = u.photo_url;
-                    document.getElementById('user-avatar').style.display = 'block';
-                    document.getElementById('no-avatar').style.display = 'none';
+                    const img = document.getElementById('u-ava-img');
+                    img.src = u.photo_url; img.style.display = 'block';
+                    document.getElementById('u-ava-ph').style.display = 'none';
                 }
             }
         }
 
-        // --- DATA MANAGEMENT ---
         function loadData() {
-            const d = localStorage.getItem('zikr_data_v2');
-            const s = localStorage.getItem('zikr_settings_v2');
-            
+            const d = localStorage.getItem('zikr_final_data_v4');
+            const s = localStorage.getItem('zikr_final_settings_v4');
             if(d) items = JSON.parse(d);
             if(s) settings = JSON.parse(s);
-            
             applySettings();
             renderList();
         }
+        function saveData() { localStorage.setItem('zikr_final_data_v4', JSON.stringify(items)); }
+        function saveSettings() { localStorage.setItem('zikr_final_settings_v4', JSON.stringify(settings)); }
 
-        function saveData() {
-            localStorage.setItem('zikr_data_v2', JSON.stringify(items));
-        }
-
-        function saveSettings() {
-            localStorage.setItem('zikr_settings_v2', JSON.stringify(settings));
-        }
-
-        // --- SETTINGS ---
-        function applySettings() {
-            if(settings.dark) document.body.classList.add('dark-mode');
-            else document.body.classList.remove('dark-mode');
-            document.getElementById('tg-dark').checked = settings.dark;
-            document.getElementById('tg-vib').checked = settings.vib;
-
-            try {
-                const color = getComputedStyle(document.body).getPropertyValue('--bg').trim();
-                tg.setHeaderColor(color);
-                tg.setBackgroundColor(color);
-            } catch(e){}
-        }
-
-        function toggleDark() {
-            settings.dark = !settings.dark;
-            applySettings();
-            saveSettings();
-        }
-
-        function toggleVib() {
-            settings.vib = !settings.vib;
-            saveSettings();
-        }
-
-        // --- NAVIGATION ---
-        function navTo(id) {
-            // Sahifalarni almashtirish
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            
-            // Navigatsiya ikonlarini yangilash
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            if(id === 'page-home') {
-                document.querySelectorAll('.nav-item')[0].classList.add('active');
-                renderList(); // <--- MUHIM: Homega qaytganda ro'yxatni yangilash
-            }
-            if(id === 'page-stats' || id === 'page-detail') {
-                document.querySelectorAll('.nav-item')[1].classList.add('active');
-                if(id === 'page-stats') renderCompleted();
-            }
-            if(id === 'page-profile') document.querySelectorAll('.nav-item')[2].classList.add('active');
-        }
-
-        // --- LOGIC: CREATE ---
         function calcDaily() {
-            const t = parseFloat(document.getElementById('inp-total').value);
-            const d = parseFloat(document.getElementById('inp-days').value);
-            if(t && d) document.getElementById('inp-daily').value = Math.ceil(t/d);
+            const t = parseInt(document.getElementById('inp-total').value) || 0;
+            const d = parseInt(document.getElementById('inp-days').value) || 0;
+            document.getElementById('lbl-daily').innerText = (t && d) ? Math.ceil(t/d) : 0;
         }
 
         function createItem() {
-            const nameEl = document.getElementById('inp-name');
-            const totalEl = document.getElementById('inp-total');
-            const daysEl = document.getElementById('inp-days');
-            const dailyEl = document.getElementById('inp-daily');
+            const name = document.getElementById('inp-name').value;
+            const total = parseInt(document.getElementById('inp-total').value);
+            const days = parseInt(document.getElementById('inp-days').value);
+            
+            if(!name || !total || !days) return tg.showAlert("To'ldiring!");
 
-            const name = nameEl.value;
-            const total = parseInt(totalEl.value);
-            const daily = parseInt(dailyEl.value);
-            
-            if(!name || isNaN(total)) {
-                tg.showAlert("Nom va Jami sonini to'g'ri kiriting!");
-                return;
-            }
-            
+            const dailyGoal = Math.ceil(total / days);
             items.push({
-                id: Date.now(),
-                name: name,
-                total: total,
-                daily: daily || total, // Agar kun kiritilmasa, kunlik reja jami bilan teng
-                count: 0,
-                status: 'active',
-                totalTimeMs: 0,
-                dailyTimeHistory: {}
+                id: Date.now(), name: name, total: total, durationDays: days,
+                dailyGoal: dailyGoal, startDate: new Date().setHours(0,0,0,0),
+                progress: new Array(days).fill(0), totalTimeMs: 0, history: {}, status: 'active'
             });
             saveData();
             
-            // Inputlarni tozalash
-            nameEl.value = '';
-            totalEl.value = '';
-            daysEl.value = '';
-            dailyEl.value = '';
-            
-            // Ro'yxatni yangilab Homega o'tish
-            renderList(); 
+            document.getElementById('inp-name').value = '';
+            document.getElementById('inp-total').value = '';
+            document.getElementById('inp-days').value = '';
             navTo('page-home');
         }
 
-        // --- LOGIC: LIST & VIEW ---
-        function renderList() {
-            const list = document.getElementById('list-container');
-            list.innerHTML = '';
-            
-            const activeItems = items.filter(i => i.status !== 'completed');
-            
-            if(activeItems.length === 0) {
-                list.innerHTML = `<div style="text-align:center; opacity:0.6; margin-top:20px;">Hozircha maqsadlar yo'q</div>`;
-                return;
-            }
+        function openDaysList(id) {
+            currentItemId = id;
+            const item = items.find(i => i.id === id);
+            document.getElementById('days-title').innerText = item.name;
+            const container = document.getElementById('days-container');
+            container.innerHTML = '';
 
-            activeItems.forEach(item => {
-                const p = Math.floor((item.count / item.total) * 100);
-                list.innerHTML += `
-                    <div class="card" onclick="openView(${item.id})" style="cursor:pointer">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px">
-                            <b>${item.name}</b>
-                            <span style="font-weight:bold; color:var(--primary)">${p}%</span>
-                        </div>
-                        <div style="background:#eee; height:6px; border-radius:3px; overflow:hidden">
-                            <div style="width:${p}%; background:var(--grad); height:100%"></div>
-                        </div>
-                    </div>
-                `;
-            });
+            const today = new Date().setHours(0,0,0,0);
+            const daysPassed = Math.floor((today - item.startDate) / (1000 * 60 * 60 * 24));
+
+            for (let i = 0; i < item.durationDays; i++) {
+                const dayNum = i + 1;
+                const isLocked = i > daysPassed;
+                const isCompleted = item.progress[i] >= item.dailyGoal;
+                const currentCount = item.progress[i];
+                
+                let cardClass = 'card';
+                let icon = '👉';
+                let statusText = `${currentCount} / ${item.dailyGoal}`;
+
+                if (isLocked) { cardClass += ' locked'; icon = '🔒'; statusText = 'Qulflangan'; } 
+                else if (isCompleted) { icon = '✅'; statusText = 'Tugatildi'; }
+
+                const div = document.createElement('div');
+                div.className = cardClass;
+                div.innerHTML = `<div style="font-weight:bold">${dayNum}-kun</div><div style="font-size:14px;opacity:0.7">${statusText}</div><div>${icon}</div>`;
+                
+                if (!isLocked) div.onclick = () => openCounter(i);
+                else div.onclick = () => tg.showAlert(`${dayNum}-kun hali kelmadi!`);
+                
+                container.appendChild(div);
+            }
+            navTo('page-days');
         }
 
-        function openView(id) {
-            currentId = id;
+        function openCounter(dayIdx) {
+            currentDayIndex = dayIdx;
             sessionStart = Date.now();
+            const item = items.find(i => i.id === currentItemId);
             
-            const item = items.find(i => i.id === id);
-            document.getElementById('view-title').innerText = item.name;
-            updateUI(item);
+            document.getElementById('view-title').innerText = `${item.name} (${dayIdx+1}-kun)`;
+            document.getElementById('view-goal').innerText = item.dailyGoal;
+            
+            updateWaterUI(item);
             navTo('page-view');
         }
 
-        function closeView() {
-            if(currentId && sessionStart > 0) {
-                const diff = Date.now() - sessionStart;
-                const item = items.find(i => i.id === currentId);
-                
-                if(item) {
-                    item.totalTimeMs += diff;
-                    const dateKey = new Date().toISOString().split('T')[0];
-                    if(!item.dailyTimeHistory) item.dailyTimeHistory = {};
-                    if(!item.dailyTimeHistory[dateKey]) item.dailyTimeHistory[dateKey] = 0;
-                    item.dailyTimeHistory[dateKey] += diff;
-                    saveData();
-                }
-            }
-            sessionStart = 0;
-            currentId = null;
-            navTo('page-home');
-        }
-
         function doCount() {
-            if(!currentId) return;
-            const item = items.find(i => i.id === currentId);
+            if (currentItemId === null || currentDayIndex === null) return;
+            const item = items.find(i => i.id === currentItemId);
             
-            item.count++;
-            if(settings.vib) {
-                try { tg.HapticFeedback.impactOccurred('medium'); } catch(e){}
-            }
-            
-            if(item.count >= item.total) {
-                item.status = 'completed';
-                tg.showPopup({ title: "Tabriklaymiz!", message: "Maqsadga yetdingiz! 🎉", buttons: [{type:"ok"}] });
-                closeView();
+            // Agar allaqachon tugagan bo'lsa
+            if (item.progress[currentDayIndex] >= item.dailyGoal) return;
+
+            item.progress[currentDayIndex]++;
+            if(settings.vib) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
+
+            // Tekshirish
+            if (item.progress[currentDayIndex] >= item.dailyGoal) {
+                item.progress[currentDayIndex] = item.dailyGoal;
+                updateWaterUI(item); 
+                saveData();
+                
+                // Mantiq: To'lgan zahoti text chiqadi va 1 soniyadan keyin YOPILADI
+                const allDone = item.progress.every(p => p >= item.dailyGoal);
+                
+                setTimeout(() => {
+                    closeView(); // 1 soniyadan keyin avtomatik yopish
+                    
+                    // Agar butunlay hamma kun tugagan bo'lsa
+                    if (allDone) {
+                        item.status = 'completed';
+                        tg.showPopup({title:"Tabriklaymiz! 🏆", message:"Barcha kunlar muvaffaqiyatli yakunlandi!", buttons:[{type:"ok"}]});
+                    }
+                }, 1200); // 1.2 soniya kutib turadi
             } else {
-                updateUI(item);
+                updateWaterUI(item);
                 saveData();
             }
         }
 
-        function updateUI(item) {
-            const left = item.total - item.count;
-            document.getElementById('view-count').innerText = item.count;
-            document.getElementById('view-remain').innerText = left;
+        function updateWaterUI(item) {
+            const cur = item.progress[currentDayIndex];
+            const max = item.dailyGoal;
+            const countEl = document.getElementById('view-count');
             
-            let p = (item.count / item.total) * 100;
-            if(p > 100) p = 100;
+            if (cur >= max) {
+                countEl.innerText = "Bajarildi! ✅";
+                countEl.style.fontSize = "28px";
+            } else {
+                countEl.innerText = cur;
+                countEl.style.fontSize = "48px";
+            }
+
+            let p = (cur / max) * 100;
+            if (p > 100) p = 100;
             document.getElementById('wave').style.setProperty('--level', (110 - p) + "%");
         }
 
-        // --- STATS & CHART ---
-        function renderCompleted() {
-            const c = document.getElementById('completed-container');
-            c.innerHTML = '';
-            const list = items.filter(i => i.status === 'completed');
-            
-            if(list.length === 0) c.innerHTML = '<p style="text-align:center; opacity:0.5">Hozircha tugatilganlar yo\'q</p>';
-
-            list.forEach(item => {
-                c.innerHTML += `
-                    <div class="card" onclick="showDetails(${item.id})" style="background:linear-gradient(to right, rgba(0,255,0,0.1), transparent); cursor:pointer">
-                        <b>${item.name} ✅</b>
-                        <div style="font-size:12px; opacity:0.7">Batafsil statistika uchun bosing 👉</div>
-                    </div>
-                `;
-            });
+        function closeView() {
+            if (currentItemId && sessionStart > 0) {
+                const diff = Date.now() - sessionStart;
+                const item = items.find(i => i.id === currentItemId);
+                if(item) {
+                    item.totalTimeMs += diff;
+                    const dKey = new Date().toISOString().split('T')[0];
+                    item.history[dKey] = (item.history[dKey] || 0) + diff;
+                    saveData();
+                }
+            }
+            sessionStart = 0; currentDayIndex = null;
+            openDaysList(currentItemId);
         }
 
-        function showDetails(id) {
-            const item = items.find(i => i.id === id);
-            document.getElementById('detail-title').innerText = item.name;
-            document.getElementById('detail-total-time').innerText = msToTime(item.totalTimeMs || 0);
-            
-            navTo('page-detail');
-            
-            if(chartInstance) chartInstance.destroy();
-            const ctx = document.getElementById('timeChart').getContext('2d');
-            
-            const labels = Object.keys(item.dailyTimeHistory || {});
-            const data = Object.values(item.dailyTimeHistory || {}).map(ms => (ms / 60000).toFixed(1));
+        // --- TUZATILGAN JOY: O'CHIRISH FUNKSIYASI ---
+        function deleteStatsItem() {
+            if (!currentItemId) return;
 
-            const color = settings.dark ? '#fff' : '#000';
-
-            chartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Vaqt (daqiqa)',
-                        data: data,
-                        backgroundColor: '#667eea',
-                        borderRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, ticks: { color: color } },
-                        x: { ticks: { color: color } }
-                    },
-                    plugins: { legend: { labels: { color: color } } }
+            // Telegram Popup orqali o'chirish
+            tg.showPopup({
+                title: "O'chirish",
+                message: "Bu statistikani butunlay o'chirib yuborasizmi?",
+                buttons: [
+                    {id: 'delete', type: 'destructive', text: "Ha, o'chirish"},
+                    {id: 'cancel', type: 'cancel', text: "Bekor qilish"}
+                ]
+            }, function(btnId) {
+                if (btnId === 'delete') {
+                    items = items.filter(i => i.id !== currentItemId);
+                    saveData();
+                    currentItemId = null;
+                    navTo('page-stats');
                 }
             });
         }
 
-        function msToTime(ms) {
-            const seconds = Math.floor((ms / 1000) % 60);
-            const minutes = Math.floor((ms / (1000 * 60)) % 60);
-            const hours = Math.floor((ms / (1000 * 60 * 60)));
-            return (hours > 0 ? hours + " soat " : "") + minutes + " daqiqa " + seconds + " soniya";
+        function renderList() {
+            const div = document.getElementById('list-container'); div.innerHTML = '';
+            const active = items.filter(i => i.status !== 'completed');
+            if(active.length === 0) div.innerHTML = '<p style="text-align:center;opacity:0.5">Maqsadlar yo\'q</p>';
+            
+            active.forEach(item => {
+                const totalP = item.progress.reduce((a,b)=>a+b, 0);
+                const percent = Math.floor((totalP / item.total) * 100);
+                const el = document.createElement('div'); el.className = 'card'; el.onclick = () => openDaysList(item.id);
+                el.innerHTML = `<h3>${item.name}</h3><div style="font-size:12px;opacity:0.7;margin-bottom:5px">Jami: ${totalP} / ${item.total}</div><div style="background:#e9e9ea;height:8px;border-radius:4px;overflow:hidden"><div style="width:${percent}%;background:var(--grad);height:100%"></div></div>`;
+                div.appendChild(el);
+            });
         }
+
+        function renderStats() {
+            const div = document.getElementById('completed-container'); div.innerHTML = '';
+            const list = items.filter(i => i.status === 'completed');
+            if(list.length === 0) div.innerHTML = '<p style="text-align:center;opacity:0.5">Tarix bo\'sh</p>';
+            list.forEach(item => {
+                const el = document.createElement('div'); el.className = 'card'; el.style.background = 'rgba(52, 199, 89, 0.2)';
+                el.onclick = () => showDetail(item.id);
+                el.innerHTML = `<b>${item.name} ✅</b><br><span style="font-size:12px">Statistika</span>`;
+                div.appendChild(el);
+            });
+        }
+
+        function showDetail(id) {
+            currentItemId = id;
+            const item = items.find(i => i.id === id);
+            document.getElementById('detail-title').innerText = item.name;
+            const m = Math.floor(item.totalTimeMs / 60000);
+            document.getElementById('detail-time').innerText = m + " daqiqa";
+            navTo('page-detail');
+            
+            if(chartInstance) chartInstance.destroy();
+            const ctx = document.getElementById('timeChart').getContext('2d');
+            const textColor = settings.dark ? '#fff' : '#000';
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: Object.keys(item.history), datasets: [{ label: 'Vaqt (daqiqa)', data: Object.values(item.history).map(ms => (ms/60000).toFixed(1)), backgroundColor: '#5856D6', borderRadius: 6 }] },
+                options: { responsive:true, maintainAspectRatio:false, scales: { y: { ticks: { color: textColor } }, x: { ticks: { color: textColor } } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function navTo(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            if(pageId === 'page-home') { document.querySelectorAll('.nav-item')[0].classList.add('active'); renderList(); }
+            if(pageId === 'page-stats') { document.querySelectorAll('.nav-item')[1].classList.add('active'); renderStats(); }
+            if(pageId === 'page-profile') document.querySelectorAll('.nav-item')[2].classList.add('active');
+        }
+        
+        function applySettings() {
+            if(settings.dark) document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
+            document.getElementById('tg-dark').checked = settings.dark; document.getElementById('tg-vib').checked = settings.vib;
+            try { const c = getComputedStyle(document.body).getPropertyValue('--bg').trim(); tg.setHeaderColor(c); tg.setBackgroundColor(c); } catch(e){}
+        }
+        function toggleDark() { settings.dark = !settings.dark; applySettings(); saveSettings(); }
+        function toggleVib() { settings.vib = !settings.vib; saveSettings(); }
 
     </script>
 </body>

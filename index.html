@@ -200,7 +200,9 @@
             + Yangi maqsad
         </div>
         <div id="list-container" style="width:100%"></div>
-    </div> <div id="page-create" class="page">
+    </div> 
+    
+    <div id="page-create" class="page">
         <h2>Yangi Reja</h2>
         <input type="text" id="inp-name" placeholder="Nomi (masalan: Istig'for)">
         <input type="number" id="inp-total" placeholder="Jami soni (100)" oninput="calcDaily()">
@@ -208,13 +210,17 @@
         <div style="width:100%; text-align:center; margin:10px 0; opacity:0.8; font-size:14px">Kuniga (taxminan): <b id="lbl-daily">0</b> ta</div>
         <button class="btn" onclick="createItem()">Boshlash</button>
         <button class="btn" style="background:transparent; color:var(--text); border:1px solid var(--border)" onclick="navTo('page-home')">Bekor qilish</button>
-    </div> <div id="page-days" class="page">
+    </div> 
+    
+    <div id="page-days" class="page">
         <div class="header-nav">
             <span class="back-btn" onclick="navTo('page-home')">⬅️</span>
             <h3 id="days-title" style="margin:0">Kunlar</h3>
         </div>
         <div id="days-container" style="width:100%"></div>
-    </div> <div id="page-view" class="page">
+    </div> 
+    
+    <div id="page-view" class="page">
         <div style="width:100%; flex-shrink: 0;">
             <div class="header-nav">
                 <span class="back-btn" onclick="closeView()">⬅️</span>
@@ -232,10 +238,14 @@
         </div>
         
         <p style="text-align:center; font-size:12px; opacity:0.5; margin-bottom: 20px; flex-shrink: 0;">Sanash uchun doirani bosing</p>
-    </div> <div id="page-stats" class="page">
+    </div> 
+    
+    <div id="page-stats" class="page">
         <h2>Statistika</h2>
         <div id="completed-container" style="width:100%"></div>
-    </div> <div id="page-detail" class="page">
+    </div> 
+    
+    <div id="page-detail" class="page">
         <div class="header-nav">
             <span class="back-btn" onclick="navTo('page-stats')">⬅️</span>
             <h3 id="detail-title" style="margin:0">Statistika</h3>
@@ -248,7 +258,9 @@
             <canvas id="timeChart"></canvas>
         </div>
         <button class="btn danger" onclick="deleteStatsItem()">🗑 Statistikani o'chirish</button>
-    </div> <div id="page-profile" class="page">
+    </div> 
+    
+    <div id="page-profile" class="page">
         <h2>Profil</h2>
         <div style="width:80px; height:80px; background:#ddd; border-radius:50%; margin:20px; display:flex; align-items:center; justify-content:center; font-size:30px; object-fit:cover; overflow:hidden">
              <img id="u-ava-img" src="" style="width:100%; height:100%; display:none">
@@ -272,8 +284,10 @@
                 </label>
             </div>
         </div>
-        <p style="margin-top:20px; opacity:0.4; font-size:12px">v14.0 Fixed Layout</p>
-    </div> <div class="nav">
+        <p style="margin-top:20px; opacity:0.4; font-size:12px">v15.0 Fixed Logic</p>
+    </div> 
+    
+    <div class="nav">
         <div class="nav-item active" onclick="navTo('page-home')">
             <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
             <div class="nav-dot"></div>
@@ -439,6 +453,7 @@
             navTo('page-view');
         }
 
+        // --- O'ZGARTIRILGAN QISM ---
         function doCount() {
             if (currentItemId === null || currentDayIndex === null) return;
             const item = items.find(i => i.id === currentItemId);
@@ -453,15 +468,31 @@
             if (item.progress[currentDayIndex] >= item.dailyGoal) {
                 item.progress[currentDayIndex] = item.dailyGoal;
                 updateCircleUI(item); 
-                saveData();
+                saveData(); // Progressni darhol saqlaymiz
                 
                 const allDone = item.progress.every(p => p >= item.dailyGoal);
                 
                 setTimeout(() => {
-                    closeView(); 
+                    // Vaqtni hisoblash (closeView'dagi kabi)
+                    if (sessionStart > 0) {
+                        const diff = Date.now() - sessionStart;
+                        item.totalTimeMs += diff;
+                        const dKey = new Date().toISOString().split('T')[0];
+                        item.history[dKey] = (item.history[dKey] || 0) + diff;
+                    }
+                    sessionStart = 0; 
+                    currentDayIndex = null;
+
                     if (allDone) {
                         item.status = 'completed';
-                        tg.showPopup({title:"Tabriklaymiz! 🏆", message:"Barcha kunlar muvaffaqiyatli yakunlandi!", buttons:[{type:"ok"}]});
+                        saveData(); // Status o'zgarishini saqlash!
+                        
+                        tg.showPopup({title:"Tabriklaymiz! 🏆", message:"Barcha kunlar muvaffaqiyatli yakunlandi!", buttons:[{type:"ok"}]}, function() {
+                            navTo('page-home'); // Bosh menyuga qaytish
+                        });
+                    } else {
+                        saveData();
+                        openDaysList(currentItemId);
                     }
                 }, 1200);
             } else {
@@ -538,7 +569,9 @@
         function renderList() {
             recalculateGoals();
             const div = document.getElementById('list-container'); div.innerHTML = '';
+            // Faqat faollarni ko'rsatamiz
             const active = items.filter(i => i.status !== 'completed');
+            
             if(active.length === 0) div.innerHTML = '<p style="text-align:center;opacity:0.5">Maqsadlar yo\'q</p>';
             
             active.forEach(item => {

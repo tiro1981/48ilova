@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Zikr & Vocabulary Fixed</title>
+    <title>Zikr & Vocabulary Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- ASOSIY RANGLAR (YASHIL MAVZU) --- */
+        /* --- ASOSIY RANGLAR --- */
         :root {
             --primary: #22c55e;
             --grad: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
@@ -19,8 +19,6 @@
             --nav-bg: rgba(255, 255, 255, 0.85);
             --switch-off: #e9e9ea;
             --icon-inactive: #999999;
-
-            /* --- SUV RANGLARI (MOVIY KO'K) --- */
             --liquid-blue: #00BFFF; 
             --liquid-surface-blue: #87CEFA; 
         }
@@ -35,7 +33,6 @@
             --nav-bg: rgba(30, 30, 30, 0.85);
             --switch-off: #39393d;
             --icon-inactive: #666666;
-
             --liquid-blue: #00BFFF;
             --liquid-surface-blue: #87CEFA;
         }
@@ -53,20 +50,14 @@
             display: flex; justify-content: center; align-items: center; flex-direction: column;
         }
 
-        /* --- SAHIFALAR LOGIKASI (MUHIM) --- */
         .page { 
-            display: none !important; /* Boshqa joyda ko'rinmasligi uchun qat'iy */
+            display: none !important; 
             flex: 1; flex-direction: column; 
             padding: 20px; overflow-y: auto; padding-bottom: 100px; align-items: center; 
         }
-        .page.active { 
-            display: flex !important; /* Faqat active bo'lganda ko'rinadi */
-        }
+        .page.active { display: flex !important; }
 
-        #page-view { 
-            justify-content: space-between; 
-            padding-bottom: 110px; 
-        }
+        #page-view { justify-content: space-between; padding-bottom: 110px; }
 
         .card {
             background: var(--card); border-radius: 20px; padding: 20px; width: 100%;
@@ -94,48 +85,41 @@
         
         input { width: 100%; padding: 15px; background: var(--card); border: none; border-radius: 15px; color: var(--text); margin-bottom: 12px; outline: none; text-align: center; }
 
+        /* --- YANGI PROFIL STATISTIKASI --- */
+        .profile-stats-row {
+            display: flex; gap: 15px; width: 100%; margin-bottom: 20px;
+        }
+        .p-stat-box {
+            flex: 1; background: var(--card); padding: 15px; border-radius: 15px;
+            text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            display: flex; flex-direction: column; justify-content: center;
+        }
+        .p-val { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 5px; }
+        .p-lbl { font-size: 12px; opacity: 0.6; }
+
         /* --- DOIRA DIZAYNI --- */
         .circle-wrapper {
             position: relative;
             width: 280px; height: 280px;
-            /* Doira shakli buzilmasligi uchun qat'iy o'lchamlar */
             min-width: 280px; min-height: 280px;
             flex-shrink: 0;
-            
-            border-radius: 50%;
-            background: var(--card);
-            border: 4px solid var(--border);
-            overflow: hidden;
-            cursor: pointer;
+            border-radius: 50%; background: var(--card); border: 4px solid var(--border);
+            overflow: hidden; cursor: pointer;
             box-shadow: inset 0 0 40px rgba(0,0,0,0.05), 0 15px 35px rgba(0,0,0,0.1);
-            
-            margin-top: auto; 
-            margin-bottom: 40px;
-            
-            /* Maska */
+            margin-top: auto; margin-bottom: 40px;
             -webkit-mask-image: -webkit-radial-gradient(white, black);
             mask-image: radial-gradient(white, black);
         }
 
-        /* Asosiy So'z Matni */
         .main-word-display {
-            font-size: 32px;
-            font-weight: 800;
-            text-align: center;
-            color: var(--text);
-            margin: 20px 0;
-            line-height: 1.2;
-            word-wrap: break-word;
-            padding: 0 20px;
+            font-size: 32px; font-weight: 800; text-align: center; color: var(--text);
+            margin: 20px 0; line-height: 1.2; word-wrap: break-word; padding: 0 20px;
         }
 
         .liquid-bottom {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 0%;
-            background: var(--liquid-blue); 
-            transition: height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            z-index: 1;
+            background: var(--liquid-blue); transition: height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 1;
         }
-
         .liquid-bottom::before {
             content: ''; position: absolute; top: -10px; left: 0; width: 100%; height: 20px;
             background: var(--liquid-surface-blue); border-radius: 50%; opacity: 0.7;
@@ -143,7 +127,6 @@
         }
         @keyframes wave { from { transform: translateX(-2%) scaleY(0.8); } to { transform: translateX(2%) scaleY(1.2); } }
 
-        /* Tomchi */
         .droplet {
             position: absolute; top: -15px; left: 50%; width: 12px; height: 12px;
             background: var(--liquid-blue); border-radius: 50% 50% 50% 0;
@@ -166,7 +149,6 @@
             z-index: 10; pointer-events: none;
         }
 
-        /* Navigation */
         .nav {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             width: 90%; height: 70px;
@@ -266,8 +248,18 @@
              <img id="u-ava-img" src="" style="width:100%; height:100%; display:none">
              <span id="u-ava-ph">👤</span>
         </div>
-        <h3 id="u-name" style="margin-top:0">Foydalanuvchi</h3>
+        <h3 id="u-name" style="margin-top:0; margin-bottom: 25px;">Foydalanuvchi</h3>
         
+        <div class="profile-stats-row">
+            <div class="p-stat-box">
+                <div class="p-val" id="p-life-count">0</div>
+                <div class="p-lbl">Jami bosildi</div>
+            </div>
+            <div class="p-stat-box">
+                <div class="p-val" id="p-life-time">0m</div>
+                <div class="p-lbl">Umumiy vaqt</div>
+            </div>
+        </div>
         <div class="settings-group">
             <div class="switch-row">
                 <span style="font-size:17px">Tungi rejim 🌙</span>
@@ -284,7 +276,7 @@
                 </label>
             </div>
         </div>
-        <p style="margin-top:20px; opacity:0.4; font-size:12px">v15.0 Fixed Logic</p>
+        <p style="margin-top:20px; opacity:0.4; font-size:12px">v16.0 Lifetime Stats</p>
     </div> 
     
     <div class="nav">
@@ -308,6 +300,9 @@
 
         let items = [];
         let settings = { dark: false, vib: true };
+        // YANGI: Umrbod statistika uchun o'zgaruvchi
+        let lifetime = { count: 0, time: 0 };
+
         let currentItemId = null;
         let currentDayIndex = null;
         let sessionStart = 0;
@@ -335,41 +330,43 @@
         function loadData() {
             const d = localStorage.getItem('zikr_final_v14');
             const s = localStorage.getItem('zikr_settings_v14');
+            const l = localStorage.getItem('zikr_lifetime_v16'); // Yangi kalit
+
             if(d) items = JSON.parse(d);
             if(s) settings = JSON.parse(s);
-            
+            if(l) lifetime = JSON.parse(l);
+
+            // Eski completed itemlarni tozalash
+            items.forEach(item => {
+                const totalDone = item.progress.reduce((a, b) => a + b, 0);
+                if (totalDone >= item.total) item.status = 'completed';
+            });
+            saveData(); 
+
             applySettings();
             recalculateGoals();
             renderList();
         }
+
         function saveData() { localStorage.setItem('zikr_final_v14', JSON.stringify(items)); }
         function saveSettings() { localStorage.setItem('zikr_settings_v14', JSON.stringify(settings)); }
+        // Yangi: Umrbod statistikani saqlash
+        function saveLifetime() { localStorage.setItem('zikr_lifetime_v16', JSON.stringify(lifetime)); }
 
-        // --- AQLLI TAQSIMLASH LOGIKASI ---
         function recalculateGoals() {
             let changed = false;
             const today = new Date().setHours(0,0,0,0);
-
             items.forEach(item => {
                 if (item.status === 'completed') return;
-
                 const daysPassed = Math.floor((today - item.startDate) / (1000 * 60 * 60 * 24));
-                
                 if (daysPassed > 0 && daysPassed < item.durationDays) {
                     let doneInPast = 0;
-                    for(let i=0; i < daysPassed; i++) {
-                        doneInPast += item.progress[i] || 0;
-                    }
-
+                    for(let i=0; i < daysPassed; i++) doneInPast += item.progress[i] || 0;
                     const totalRemaining = item.total - doneInPast;
                     const daysLeft = item.durationDays - daysPassed;
-
                     if (totalRemaining > 0 && daysLeft > 0) {
                         const newDailyGoal = Math.ceil(totalRemaining / daysLeft);
-                        if (item.dailyGoal !== newDailyGoal) {
-                            item.dailyGoal = newDailyGoal;
-                            changed = true;
-                        }
+                        if (item.dailyGoal !== newDailyGoal) { item.dailyGoal = newDailyGoal; changed = true; }
                     }
                 }
             });
@@ -386,9 +383,7 @@
             const name = document.getElementById('inp-name').value;
             const total = parseInt(document.getElementById('inp-total').value);
             const days = parseInt(document.getElementById('inp-days').value);
-            
             if(!name || !total || !days) return tg.showAlert("To'ldiring!");
-
             const dailyGoal = Math.ceil(total / days);
             items.push({
                 id: Date.now(), name: name, total: total, durationDays: days,
@@ -396,7 +391,6 @@
                 progress: new Array(days).fill(0), totalTimeMs: 0, history: {}, status: 'active'
             });
             saveData();
-            
             document.getElementById('inp-name').value = '';
             document.getElementById('inp-total').value = '';
             document.getElementById('inp-days').value = '';
@@ -409,33 +403,23 @@
             document.getElementById('days-title').innerText = item.name;
             const container = document.getElementById('days-container');
             container.innerHTML = '';
-
             recalculateGoals();
-
             const today = new Date().setHours(0,0,0,0);
             const daysPassed = Math.floor((today - item.startDate) / (1000 * 60 * 60 * 24));
-
             for (let i = 0; i < item.durationDays; i++) {
                 const dayNum = i + 1;
                 const isLocked = i > daysPassed;
                 const currentCount = item.progress[i];
                 let targetForThisDay = item.dailyGoal; 
-                
-                let cardClass = 'card';
-                let icon = '👉';
-                let statusText = `${currentCount} / ${targetForThisDay}`;
-
+                let cardClass = 'card'; let icon = '👉'; let statusText = `${currentCount} / ${targetForThisDay}`;
                 if (isLocked) { cardClass += ' locked'; icon = '🔒'; statusText = 'Qulflangan'; } 
                 else if (currentCount >= targetForThisDay) { icon = '✅'; statusText = 'Tugatildi'; }
                 else if (i === daysPassed) { statusText = `Bugun: ${currentCount} / ${targetForThisDay}`; }
-
                 const div = document.createElement('div');
                 div.className = cardClass;
                 div.innerHTML = `<div style="font-weight:bold">${dayNum}-kun</div><div style="font-size:14px;opacity:0.7">${statusText}</div><div>${icon}</div>`;
-                
                 if (!isLocked) div.onclick = () => openCounter(i);
                 else div.onclick = () => tg.showAlert(`${dayNum}-kun hali kelmadi!`);
-                
                 container.appendChild(div);
             }
             navTo('page-days');
@@ -445,66 +429,62 @@
             currentDayIndex = dayIdx;
             sessionStart = Date.now();
             const item = items.find(i => i.id === currentItemId);
-            
             document.getElementById('view-word-name').innerText = item.name;
             document.getElementById('view-goal').innerText = item.dailyGoal;
-            
             updateCircleUI(item);
             navTo('page-view');
         }
 
-        // --- O'ZGARTIRILGAN QISM ---
         function doCount() {
             if (currentItemId === null || currentDayIndex === null) return;
             const item = items.find(i => i.id === currentItemId);
-            
             if (item.progress[currentDayIndex] >= item.dailyGoal) return;
 
+            // 1. Asosiy hisobni oshiramiz
             item.progress[currentDayIndex]++;
-            if(settings.vib) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
             
+            // 2. GLOBAL (UMRBOD) hisobni oshiramiz va saqlaymiz
+            lifetime.count++;
+            saveLifetime();
+
+            if(settings.vib) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
             createDroplets();
 
             if (item.progress[currentDayIndex] >= item.dailyGoal) {
                 item.progress[currentDayIndex] = item.dailyGoal;
-                updateCircleUI(item); 
-                saveData(); // Progressni darhol saqlaymiz
-                
+                updateCircleUI(item); saveData();
                 const allDone = item.progress.every(p => p >= item.dailyGoal);
                 
                 setTimeout(() => {
-                    // Vaqtni hisoblash (closeView'dagi kabi)
                     if (sessionStart > 0) {
                         const diff = Date.now() - sessionStart;
                         item.totalTimeMs += diff;
+                        
+                        // GLOBAL Vaqtni oshiramiz
+                        lifetime.time += diff;
+                        saveLifetime();
+
                         const dKey = new Date().toISOString().split('T')[0];
                         item.history[dKey] = (item.history[dKey] || 0) + diff;
                     }
-                    sessionStart = 0; 
-                    currentDayIndex = null;
-
+                    sessionStart = 0; currentDayIndex = null;
                     if (allDone) {
-                        item.status = 'completed';
-                        saveData(); // Status o'zgarishini saqlash!
-                        
+                        item.status = 'completed'; saveData();
                         tg.showPopup({title:"Tabriklaymiz! 🏆", message:"Barcha kunlar muvaffaqiyatli yakunlandi!", buttons:[{type:"ok"}]}, function() {
-                            navTo('page-home'); // Bosh menyuga qaytish
+                            navTo('page-home');
                         });
                     } else {
-                        saveData();
-                        openDaysList(currentItemId);
+                        saveData(); openDaysList(currentItemId);
                     }
                 }, 1200);
             } else {
-                updateCircleUI(item);
-                saveData();
+                updateCircleUI(item); saveData();
             }
         }
 
         function createDroplets() {
             const wrapper = document.querySelector('.circle-wrapper');
             const bottomLiquid = document.getElementById('liq-bottom');
-            
             for(let i=0; i<3; i++) {
                 setTimeout(() => {
                     const drop = document.createElement('div');
@@ -512,7 +492,6 @@
                     drop.style.left = (50 + (Math.random() * 10 - 5)) + '%';
                     wrapper.appendChild(drop);
                     setTimeout(() => { drop.remove(); }, 500);
-
                     setTimeout(() => {
                         const ripple = document.createElement('div');
                         ripple.className = 'ripple';
@@ -527,12 +506,9 @@
         function updateCircleUI(item) {
             const cur = item.progress[currentDayIndex];
             const max = item.dailyGoal;
-            
             let ratio = cur / max;
             if (ratio > 1) ratio = 1;
-
-            const botHeight = 100 * ratio;
-            document.getElementById('liq-bottom').style.height = botHeight + "%";
+            document.getElementById('liq-bottom').style.height = (100 * ratio) + "%";
         }
 
         function closeView() {
@@ -541,6 +517,11 @@
                 const item = items.find(i => i.id === currentItemId);
                 if(item) {
                     item.totalTimeMs += diff;
+                    
+                    // GLOBAL Vaqtni oshiramiz
+                    lifetime.time += diff;
+                    saveLifetime();
+
                     const dKey = new Date().toISOString().split('T')[0];
                     item.history[dKey] = (item.history[dKey] || 0) + diff;
                     saveData();
@@ -554,10 +535,11 @@
             if (!currentItemId) return;
             tg.showPopup({
                 title: "O'chirish",
-                message: "Haqiqatan ham o'chirmoqchimisiz?",
+                message: "Haqiqatan ham o'chirmoqchimisiz? (Umrbod statistikaga ta'sir qilmaydi)",
                 buttons: [{id: 'delete', type: 'destructive', text: "Ha"}, {id: 'cancel', type: 'cancel', text: "Yo'q"}]
             }, function(btnId) {
                 if (btnId === 'delete') {
+                    // Faqat items ro'yxatidan o'chiramiz, lifetime o'zgaruvchisiga tegmaymiz
                     items = items.filter(i => i.id !== currentItemId);
                     saveData();
                     currentItemId = null;
@@ -569,11 +551,8 @@
         function renderList() {
             recalculateGoals();
             const div = document.getElementById('list-container'); div.innerHTML = '';
-            // Faqat faollarni ko'rsatamiz
             const active = items.filter(i => i.status !== 'completed');
-            
             if(active.length === 0) div.innerHTML = '<p style="text-align:center;opacity:0.5">Maqsadlar yo\'q</p>';
-            
             active.forEach(item => {
                 const totalP = item.progress.reduce((a,b)=>a+b, 0);
                 const percent = Math.floor((totalP / item.total) * 100);
@@ -602,11 +581,9 @@
             const m = Math.floor(item.totalTimeMs / 60000);
             document.getElementById('detail-time').innerText = m + " daqiqa";
             navTo('page-detail');
-            
             if(chartInstance) chartInstance.destroy();
             const ctx = document.getElementById('timeChart').getContext('2d');
             const textColor = settings.dark ? '#fff' : '#000';
-            
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: { labels: Object.keys(item.history), datasets: [{ label: 'Vaqt (daqiqa)', data: Object.values(item.history).map(ms => (ms/60000).toFixed(1)), backgroundColor: '#22c55e', borderRadius: 6 }] },
@@ -614,15 +591,34 @@
             });
         }
 
+        // --- PROFIL EKRANI LOGIKASI ---
+        function updateProfileUI() {
+            // Sonni yangilash
+            document.getElementById('p-life-count').innerText = lifetime.count;
+
+            // Vaqtni chiroyli formatlash
+            let totalMin = Math.floor(lifetime.time / 60000);
+            let h = Math.floor(totalMin / 60);
+            let m = totalMin % 60;
+            
+            let timeText = "";
+            if (h > 0) timeText += h + "s ";
+            timeText += m + "m";
+            
+            document.getElementById('p-life-time').innerText = timeText;
+        }
+
         function navTo(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
-            
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             
             if(pageId === 'page-home') { document.querySelectorAll('.nav-item')[0].classList.add('active'); renderList(); }
             if(pageId === 'page-stats') { document.querySelectorAll('.nav-item')[1].classList.add('active'); renderStats(); }
-            if(pageId === 'page-profile') document.querySelectorAll('.nav-item')[2].classList.add('active');
+            if(pageId === 'page-profile') {
+                document.querySelectorAll('.nav-item')[2].classList.add('active');
+                updateProfileUI(); // Profilga o'tganda ma'lumotni yangilash
+            }
         }
         
         function applySettings() {

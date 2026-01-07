@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Zikr & Vocabulary Realistic Water</title>
+    <title>Zikr & Vocabulary Fixed</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- ASOSIY RANGLAR (YASHIL DIZAYN) --- */
+        /* --- ASOSIY RANGLAR (YASHIL MAVZU) --- */
         :root {
             --primary: #22c55e;
             --grad: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
@@ -20,10 +20,9 @@
             --switch-off: #e9e9ea;
             --icon-inactive: #999999;
 
-            /* --- YANGI REALISTIK SUV RANGLARI --- */
-            --water-deep: #0288d1; /* Chuqur joyi (quyuq ko'k) */
-            --water-surface: #4fc3f7; /* Yuzasi (och ko'k) */
-            --water-highlight: rgba(225, 245, 254, 0.5); /* Yaltiroq to'lqin qirrasi */
+            /* --- SUV RANGLARI (MOVIY KO'K) --- */
+            --liquid-blue: #00BFFF; 
+            --liquid-surface-blue: #87CEFA; 
         }
 
         body.dark-mode {
@@ -37,10 +36,8 @@
             --switch-off: #39393d;
             --icon-inactive: #666666;
 
-             /* Tungi rejim uchun suv ranglari (biroz yorqinroq) */
-            --water-deep: #039be5;
-            --water-surface: #81d4fa;
-            --water-highlight: rgba(225, 245, 254, 0.6);
+            --liquid-blue: #00BFFF;
+            --liquid-surface-blue: #87CEFA;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -56,10 +53,20 @@
             display: flex; justify-content: center; align-items: center; flex-direction: column;
         }
 
-        .page { display: none; flex: 1; flex-direction: column; padding: 20px; overflow-y: auto; padding-bottom: 100px; align-items: center; }
-        .page.active { display: flex; }
+        /* --- SAHIFALAR LOGIKASI (MUHIM) --- */
+        .page { 
+            display: none !important; /* Boshqa joyda ko'rinmasligi uchun qat'iy */
+            flex: 1; flex-direction: column; 
+            padding: 20px; overflow-y: auto; padding-bottom: 100px; align-items: center; 
+        }
+        .page.active { 
+            display: flex !important; /* Faqat active bo'lganda ko'rinadi */
+        }
 
-        #page-view { justify-content: space-between; padding-bottom: 110px; }
+        #page-view { 
+            justify-content: space-between; 
+            padding-bottom: 110px; 
+        }
 
         .card {
             background: var(--card); border-radius: 20px; padding: 20px; width: 100%;
@@ -87,86 +94,75 @@
         
         input { width: 100%; padding: 15px; background: var(--card); border: none; border-radius: 15px; color: var(--text); margin-bottom: 12px; outline: none; text-align: center; }
 
-        /* --- REALISTIC WATER CIRCLE STYLES --- */
+        /* --- DOIRA DIZAYNI --- */
         .circle-wrapper {
             position: relative;
             width: 280px; height: 280px;
+            /* Doira shakli buzilmasligi uchun qat'iy o'lchamlar */
+            min-width: 280px; min-height: 280px;
+            flex-shrink: 0;
+            
             border-radius: 50%;
             background: var(--card);
             border: 4px solid var(--border);
             overflow: hidden;
             cursor: pointer;
-            /* Idish ichiga soya berish */
-            box-shadow: inset 0 0 40px rgba(0,0,0,0.1), 0 15px 35px rgba(0,0,0,0.1);
-            margin-top: auto; margin-bottom: 20px;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.05), 0 15px 35px rgba(0,0,0,0.1);
+            
+            margin-top: auto; 
+            margin-bottom: 40px;
+            
+            /* Maska */
             -webkit-mask-image: -webkit-radial-gradient(white, black);
+            mask-image: radial-gradient(white, black);
         }
 
-        /* Pastki suyuqlik (Realistik Gradient) */
+        /* Asosiy So'z Matni */
+        .main-word-display {
+            font-size: 32px;
+            font-weight: 800;
+            text-align: center;
+            color: var(--text);
+            margin: 20px 0;
+            line-height: 1.2;
+            word-wrap: break-word;
+            padding: 0 20px;
+        }
+
         .liquid-bottom {
             position: absolute; bottom: 0; left: 0; width: 100%; height: 0%;
-            /* Gradient: Pasti to'qroq, tepasi ochroq */
-            background: linear-gradient(to top, var(--water-deep) 0%, var(--water-surface) 100%);
+            background: var(--liquid-blue); 
             transition: height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             z-index: 1;
-            /* Suv tubidagi chuqurlik soyasi */
-            box-shadow: inset 0 -10px 20px rgba(0,0,0,0.2);
         }
 
-        /* To'lqin effekti - 1-qavat (Yaltiroq old qism) */
         .liquid-bottom::before {
-            content: ''; position: absolute;
-            top: -15px; left: 0; width: 100%; height: 30px;
-            background: var(--water-highlight); /* Juda och yaltiroq rang */
-            border-radius: 50%;
-            animation: waveFront 2.5s infinite linear alternate;
+            content: ''; position: absolute; top: -10px; left: 0; width: 100%; height: 20px;
+            background: var(--liquid-surface-blue); border-radius: 50%; opacity: 0.7;
+            animation: wave 2s infinite linear alternate;
         }
+        @keyframes wave { from { transform: translateX(-2%) scaleY(0.8); } to { transform: translateX(2%) scaleY(1.2); } }
 
-        /* To'lqin effekti - 2-qavat (Orqa fon qismi, sekinroq) */
-        .liquid-bottom::after {
-            content: ''; position: absolute;
-            top: -10px; left: 0; width: 100%; height: 25px;
-            background: var(--water-surface); /* Sirt rangi */
-            border-radius: 50%; opacity: 0.6;
-            animation: waveBack 4s infinite linear alternate-reverse;
-        }
-
-        @keyframes waveFront { from { transform: translateX(-3%) scaleY(0.9); } to { transform: translateX(3%) scaleY(1.1); } }
-        @keyframes waveBack { from { transform: translateX(-5%) scaleY(0.8); } to { transform: translateX(5%) scaleY(1.2); } }
-
-        /* Tomchi (Realistik rang) */
+        /* Tomchi */
         .droplet {
-            position: absolute; top: -15px; left: 50%;
-            width: 12px; height: 12px;
-            background: var(--water-surface); /* Sirt rangida */
-            border-radius: 50% 50% 50% 0;
-            transform: translateX(-50%) rotate(-45deg);
-            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.1); /* Tomchiga hajm berish */
-            z-index: 3;
+            position: absolute; top: -15px; left: 50%; width: 12px; height: 12px;
+            background: var(--liquid-blue); border-radius: 50% 50% 50% 0;
+            transform: translateX(-50%) rotate(-45deg); z-index: 3;
             animation: dropFall 0.6s ease-in forwards;
         }
-        @keyframes dropFall {
-            to { top: 55%; opacity: 0; transform: translateX(-50%) rotate(-45deg) scale(0.4); }
-        }
+        @keyframes dropFall { to { top: 55%; opacity: 0; transform: translateX(-50%) rotate(-45deg) scale(0.4); } }
 
-        /* Chayqalish (Ripple - Yaltiroq oq) */
         .ripple {
-            position: absolute; top: 0; left: 50%;
-            width: 10px; height: 10px;
-            border: 2px solid rgba(255,255,255,0.7); /* Oqroq hoshiya */
-            border-radius: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            z-index: 4;
+            position: absolute; top: 0; left: 50%; width: 10px; height: 10px;
+            border: 2px solid rgba(255,255,255,0.6); border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0); z-index: 4;
             animation: rippleAnim 0.6s ease-out forwards;
         }
-        @keyframes rippleAnim {
-            to { transform: translate(-50%, -50%) scale(5); opacity: 0; }
-        }
+        @keyframes rippleAnim { to { transform: translate(-50%, -50%) scale(5); opacity: 0; } }
 
-        /* Idish ustidagi yaltiroq shisha effekti */
         .glass-shine {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 30%);
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 25%);
             z-index: 10; pointer-events: none;
         }
 
@@ -189,7 +185,7 @@
         .nav-dot { width: 5px; height: 5px; background: var(--primary); border-radius: 50%; margin-top: 5px; opacity: 0; transform: scale(0); transition: 0.3s; }
         .nav-item.active .nav-dot { opacity: 1; transform: scale(1); }
 
-        .header-nav { width: 100%; display: flex; align-items: center; margin-bottom: 20px; }
+        .header-nav { width: 100%; display: flex; align-items: center; margin-bottom: 10px; flex-shrink: 0; }
         .back-btn { font-size: 24px; padding-right: 15px; cursor: pointer; }
 
     </style>
@@ -204,50 +200,42 @@
             + Yangi maqsad
         </div>
         <div id="list-container" style="width:100%"></div>
-    </div>
-
-    <div id="page-create" class="page">
+    </div> <div id="page-create" class="page">
         <h2>Yangi Reja</h2>
         <input type="text" id="inp-name" placeholder="Nomi (masalan: Istig'for)">
         <input type="number" id="inp-total" placeholder="Jami soni (100)" oninput="calcDaily()">
         <input type="number" id="inp-days" placeholder="Kunlar (10)" oninput="calcDaily()">
-        <div style="width:100%; text-align:center; margin:10px 0; opacity:0.8; font-size:14px">Kuniga: <b id="lbl-daily">0</b> ta</div>
+        <div style="width:100%; text-align:center; margin:10px 0; opacity:0.8; font-size:14px">Kuniga (taxminan): <b id="lbl-daily">0</b> ta</div>
         <button class="btn" onclick="createItem()">Boshlash</button>
         <button class="btn" style="background:transparent; color:var(--text); border:1px solid var(--border)" onclick="navTo('page-home')">Bekor qilish</button>
-    </div>
-
-    <div id="page-days" class="page">
+    </div> <div id="page-days" class="page">
         <div class="header-nav">
             <span class="back-btn" onclick="navTo('page-home')">⬅️</span>
             <h3 id="days-title" style="margin:0">Kunlar</h3>
         </div>
         <div id="days-container" style="width:100%"></div>
-    </div>
-
-    <div id="page-view" class="page">
-        <div style="width:100%">
+    </div> <div id="page-view" class="page">
+        <div style="width:100%; flex-shrink: 0;">
             <div class="header-nav">
                 <span class="back-btn" onclick="closeView()">⬅️</span>
-                <h3 id="view-title" style="margin:0">...</h3>
+                <div style="flex:1"></div>
             </div>
-            <p style="text-align:center; opacity:0.7">Bugungi reja: <b id="view-goal">0</b></p>
+            
+            <p style="text-align:center; opacity:0.7; margin-bottom:5px">Bugungi reja: <b id="view-goal">0</b></p>
         </div>
+        
+        <div class="main-word-display" id="view-word-name">...</div>
         
         <div class="circle-wrapper" onclick="doCount()">
             <div class="liquid-bottom" id="liq-bottom"></div>
-            
             <div class="glass-shine"></div>
         </div>
         
-        <p style="text-align:center; font-size:12px; opacity:0.5; margin-bottom: 20px;">Sanash uchun doirani bosing</p>
-    </div>
-
-    <div id="page-stats" class="page">
+        <p style="text-align:center; font-size:12px; opacity:0.5; margin-bottom: 20px; flex-shrink: 0;">Sanash uchun doirani bosing</p>
+    </div> <div id="page-stats" class="page">
         <h2>Statistika</h2>
         <div id="completed-container" style="width:100%"></div>
-    </div>
-
-    <div id="page-detail" class="page">
+    </div> <div id="page-detail" class="page">
         <div class="header-nav">
             <span class="back-btn" onclick="navTo('page-stats')">⬅️</span>
             <h3 id="detail-title" style="margin:0">Statistika</h3>
@@ -260,9 +248,7 @@
             <canvas id="timeChart"></canvas>
         </div>
         <button class="btn danger" onclick="deleteStatsItem()">🗑 Statistikani o'chirish</button>
-    </div>
-
-    <div id="page-profile" class="page">
+    </div> <div id="page-profile" class="page">
         <h2>Profil</h2>
         <div style="width:80px; height:80px; background:#ddd; border-radius:50%; margin:20px; display:flex; align-items:center; justify-content:center; font-size:30px; object-fit:cover; overflow:hidden">
              <img id="u-ava-img" src="" style="width:100%; height:100%; display:none">
@@ -286,10 +272,8 @@
                 </label>
             </div>
         </div>
-        <p style="margin-top:20px; opacity:0.4; font-size:12px">v12.0 Realistic Water</p>
-    </div>
-
-    <div class="nav">
+        <p style="margin-top:20px; opacity:0.4; font-size:12px">v14.0 Fixed Layout</p>
+    </div> <div class="nav">
         <div class="nav-item active" onclick="navTo('page-home')">
             <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
             <div class="nav-dot"></div>
@@ -335,15 +319,48 @@
         }
 
         function loadData() {
-            const d = localStorage.getItem('zikr_final_v12');
-            const s = localStorage.getItem('zikr_settings_v12');
+            const d = localStorage.getItem('zikr_final_v14');
+            const s = localStorage.getItem('zikr_settings_v14');
             if(d) items = JSON.parse(d);
             if(s) settings = JSON.parse(s);
+            
             applySettings();
+            recalculateGoals();
             renderList();
         }
-        function saveData() { localStorage.setItem('zikr_final_v12', JSON.stringify(items)); }
-        function saveSettings() { localStorage.setItem('zikr_settings_v12', JSON.stringify(settings)); }
+        function saveData() { localStorage.setItem('zikr_final_v14', JSON.stringify(items)); }
+        function saveSettings() { localStorage.setItem('zikr_settings_v14', JSON.stringify(settings)); }
+
+        // --- AQLLI TAQSIMLASH LOGIKASI ---
+        function recalculateGoals() {
+            let changed = false;
+            const today = new Date().setHours(0,0,0,0);
+
+            items.forEach(item => {
+                if (item.status === 'completed') return;
+
+                const daysPassed = Math.floor((today - item.startDate) / (1000 * 60 * 60 * 24));
+                
+                if (daysPassed > 0 && daysPassed < item.durationDays) {
+                    let doneInPast = 0;
+                    for(let i=0; i < daysPassed; i++) {
+                        doneInPast += item.progress[i] || 0;
+                    }
+
+                    const totalRemaining = item.total - doneInPast;
+                    const daysLeft = item.durationDays - daysPassed;
+
+                    if (totalRemaining > 0 && daysLeft > 0) {
+                        const newDailyGoal = Math.ceil(totalRemaining / daysLeft);
+                        if (item.dailyGoal !== newDailyGoal) {
+                            item.dailyGoal = newDailyGoal;
+                            changed = true;
+                        }
+                    }
+                }
+            });
+            if (changed) saveData();
+        }
 
         function calcDaily() {
             const t = parseInt(document.getElementById('inp-total').value) || 0;
@@ -379,21 +396,24 @@
             const container = document.getElementById('days-container');
             container.innerHTML = '';
 
+            recalculateGoals();
+
             const today = new Date().setHours(0,0,0,0);
             const daysPassed = Math.floor((today - item.startDate) / (1000 * 60 * 60 * 24));
 
             for (let i = 0; i < item.durationDays; i++) {
                 const dayNum = i + 1;
                 const isLocked = i > daysPassed;
-                const isCompleted = item.progress[i] >= item.dailyGoal;
                 const currentCount = item.progress[i];
+                let targetForThisDay = item.dailyGoal; 
                 
                 let cardClass = 'card';
                 let icon = '👉';
-                let statusText = `${currentCount} / ${item.dailyGoal}`;
+                let statusText = `${currentCount} / ${targetForThisDay}`;
 
                 if (isLocked) { cardClass += ' locked'; icon = '🔒'; statusText = 'Qulflangan'; } 
-                else if (isCompleted) { icon = '✅'; statusText = 'Tugatildi'; }
+                else if (currentCount >= targetForThisDay) { icon = '✅'; statusText = 'Tugatildi'; }
+                else if (i === daysPassed) { statusText = `Bugun: ${currentCount} / ${targetForThisDay}`; }
 
                 const div = document.createElement('div');
                 div.className = cardClass;
@@ -412,7 +432,7 @@
             sessionStart = Date.now();
             const item = items.find(i => i.id === currentItemId);
             
-            document.getElementById('view-title').innerText = `${item.name} (${dayIdx+1}-kun)`;
+            document.getElementById('view-word-name').innerText = item.name;
             document.getElementById('view-goal').innerText = item.dailyGoal;
             
             updateCircleUI(item);
@@ -428,7 +448,7 @@
             item.progress[currentDayIndex]++;
             if(settings.vib) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
             
-            createDroplets(); // Tomchi tushirish
+            createDroplets();
 
             if (item.progress[currentDayIndex] >= item.dailyGoal) {
                 item.progress[currentDayIndex] = item.dailyGoal;
@@ -516,6 +536,7 @@
         }
 
         function renderList() {
+            recalculateGoals();
             const div = document.getElementById('list-container'); div.innerHTML = '';
             const active = items.filter(i => i.status !== 'completed');
             if(active.length === 0) div.innerHTML = '<p style="text-align:center;opacity:0.5">Maqsadlar yo\'q</p>';

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Zikr & Vocabulary Pro</title>
+    <title>Zikr & Vocabulary Cloud</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -50,6 +50,11 @@
             display: flex; justify-content: center; align-items: center; flex-direction: column;
         }
 
+        /* Status Icon (Cloud holati) */
+        #cloud-status {
+            position: absolute; top: 15px; right: 15px; font-size: 12px; opacity: 0.7; display: flex; align-items: center; gap: 5px;
+        }
+
         .page { 
             display: none !important; 
             flex: 1; flex-direction: column; 
@@ -85,7 +90,7 @@
         
         input { width: 100%; padding: 15px; background: var(--card); border: none; border-radius: 15px; color: var(--text); margin-bottom: 12px; outline: none; text-align: center; }
 
-        /* --- YANGI PROFIL STATISTIKASI --- */
+        /* --- PROFIL STATISTIKASI --- */
         .profile-stats-row {
             display: flex; gap: 15px; width: 100%; margin-bottom: 20px;
         }
@@ -177,6 +182,8 @@
     <div id="loader"><h3>Yuklanmoqda...</h3></div>
 
     <div id="page-home" class="page active">
+        <div id="cloud-status">☁️ <span id="cloud-text">Oflayn</span></div>
+
         <h2 id="welcome-text" style="text-align:center">Assalomu alaykum</h2>
         <div class="card" onclick="navTo('page-create')" style="color:var(--primary); font-weight:bold; cursor:pointer; border: 2px dashed var(--primary); background: transparent;">
             + Yangi maqsad
@@ -260,6 +267,7 @@
                 <div class="p-lbl">Umumiy vaqt</div>
             </div>
         </div>
+
         <div class="settings-group">
             <div class="switch-row">
                 <span style="font-size:17px">Tungi rejim 🌙</span>
@@ -276,7 +284,7 @@
                 </label>
             </div>
         </div>
-        <p style="margin-top:20px; opacity:0.4; font-size:12px">v16.0 Lifetime Stats</p>
+        <p style="margin-top:20px; opacity:0.4; font-size:12px">v18.0 Cloud Sync Enabled ☁️</p>
     </div> 
     
     <div class="nav">
@@ -300,18 +308,36 @@
 
         let items = [];
         let settings = { dark: false, vib: true };
-        // YANGI: Umrbod statistika uchun o'zgaruvchi
-        let lifetime = { count: 0, time: 0 };
+        let lifetime = { count: 0, time: 0 }; 
 
         let currentItemId = null;
         let currentDayIndex = null;
         let sessionStart = 0;
         let chartInstance = null;
+        let saveInterval = null;
+
+        // Cloud kalitlari
+        const CLOUD_KEY_ITEMS = 'zikr_data_v1';
+        const CLOUD_KEY_SETTINGS = 'zikr_set_v1';
+        const CLOUD_KEY_LIFE = 'zikr_life_v1';
 
         window.onload = function() {
             setTimeout(() => document.getElementById('loader').style.display = 'none', 1000);
-            loadData();
+            
+            // 1. Avval Localni yuklaymiz (Tez ochilishi uchun)
+            loadFromLocal();
             initUser();
+            
+            // 2. Keyin Cloudni tekshiramiz (Sinxronizatsiya)
+            syncFromCloud();
+
+            // Har 5 soniyada Cloudga va Localga saqlash
+            saveInterval = setInterval(saveAllData, 5000);
+            
+            window.addEventListener("beforeunload", () => {
+                closeView(true);
+                saveAllData();
+            });
         };
 
         function initUser() {
@@ -327,31 +353,94 @@
             }
         }
 
-        function loadData() {
+        // --- LOCAL STORAGE LOGIKASI ---
+        function loadFromLocal() {
             const d = localStorage.getItem('zikr_final_v14');
             const s = localStorage.getItem('zikr_settings_v14');
-            const l = localStorage.getItem('zikr_lifetime_v16'); // Yangi kalit
+            const l = localStorage.getItem('zikr_lifetime_v16'); 
 
-            if(d) items = JSON.parse(d);
-            if(s) settings = JSON.parse(s);
-            if(l) lifetime = JSON.parse(l);
+            if(d) try { items = JSON.parse(d); } catch(e) { items = []; }
+            if(s) try { settings = JSON.parse(s); } catch(e) { settings = { dark: false, vib: true }; }
+            if(l) try { lifetime = JSON.parse(l); } catch(e) { lifetime = { count: 0, time: 0 }; }
 
             // Eski completed itemlarni tozalash
-            items.forEach(item => {
-                const totalDone = item.progress.reduce((a, b) => a + b, 0);
-                if (totalDone >= item.total) item.status = 'completed';
-            });
-            saveData(); 
-
+            cleanOldItems();
+            
             applySettings();
             recalculateGoals();
             renderList();
         }
 
-        function saveData() { localStorage.setItem('zikr_final_v14', JSON.stringify(items)); }
-        function saveSettings() { localStorage.setItem('zikr_settings_v14', JSON.stringify(settings)); }
-        // Yangi: Umrbod statistikani saqlash
-        function saveLifetime() { localStorage.setItem('zikr_lifetime_v16', JSON.stringify(lifetime)); }
+        function cleanOldItems() {
+            items.forEach(item => {
+                const totalDone = item.progress.reduce((a, b) => a + b, 0);
+                if (totalDone >= item.total) item.status = 'completed';
+            });
+        }
+
+        // --- CLOUD STORAGE LOGIKASI (YANGI) ---
+        function syncFromCloud() {
+            document.getElementById('cloud-text').innerText = "Ulanmoqda...";
+            
+            // CloudStorage ishlayaptimi tekshirish
+            if (!tg.CloudStorage) {
+                document.getElementById('cloud-text').innerText = "Bulut yo'q";
+                return;
+            }
+
+            tg.CloudStorage.getItem([CLOUD_KEY_ITEMS, CLOUD_KEY_SETTINGS, CLOUD_KEY_LIFE], (err, res) => {
+                if (err) {
+                    console.error("Cloud Error:", err);
+                    document.getElementById('cloud-text').innerText = "Xato";
+                } else {
+                    if (res) {
+                        // Agar Cloud bo'sh bo'lmasa, uni qabul qilamiz
+                        let hasNewData = false;
+                        
+                        if(res[CLOUD_KEY_ITEMS]) {
+                            try { items = JSON.parse(res[CLOUD_KEY_ITEMS]); hasNewData = true; } catch(e){}
+                        }
+                        if(res[CLOUD_KEY_SETTINGS]) {
+                            try { settings = JSON.parse(res[CLOUD_KEY_SETTINGS]); hasNewData = true; } catch(e){}
+                        }
+                        if(res[CLOUD_KEY_LIFE]) {
+                            try { lifetime = JSON.parse(res[CLOUD_KEY_LIFE]); hasNewData = true; } catch(e){}
+                        }
+
+                        if(hasNewData) {
+                            cleanOldItems();
+                            applySettings();
+                            recalculateGoals();
+                            renderList();
+                            updateProfileUI();
+                            console.log("Cloud synced!");
+                        }
+                        document.getElementById('cloud-text').innerText = "Sinxronlandi ✅";
+                        document.getElementById('cloud-status').style.color = "var(--primary)";
+                    } else {
+                        document.getElementById('cloud-text').innerText = "Bo'sh";
+                    }
+                }
+            });
+        }
+
+        function saveAllData() {
+            // 1. Localga saqlash (Zudlik bilan)
+            localStorage.setItem('zikr_final_v14', JSON.stringify(items));
+            localStorage.setItem('zikr_settings_v14', JSON.stringify(settings));
+            localStorage.setItem('zikr_lifetime_v16', JSON.stringify(lifetime));
+
+            // 2. Cloudga saqlash (Orqa fonda)
+            if (tg.CloudStorage) {
+                tg.CloudStorage.setItem(CLOUD_KEY_ITEMS, JSON.stringify(items));
+                tg.CloudStorage.setItem(CLOUD_KEY_SETTINGS, JSON.stringify(settings));
+                tg.CloudStorage.setItem(CLOUD_KEY_LIFE, JSON.stringify(lifetime), (err, saved) => {
+                    if(!err && saved) {
+                        document.getElementById('cloud-text').innerText = "Saqlandi ✅";
+                    }
+                });
+            }
+        }
 
         function recalculateGoals() {
             let changed = false;
@@ -370,7 +459,7 @@
                     }
                 }
             });
-            if (changed) saveData();
+            if (changed) saveAllData();
         }
 
         function calcDaily() {
@@ -390,7 +479,7 @@
                 dailyGoal: dailyGoal, startDate: new Date().setHours(0,0,0,0),
                 progress: new Array(days).fill(0), totalTimeMs: 0, history: {}, status: 'active'
             });
-            saveData();
+            saveAllData();
             document.getElementById('inp-name').value = '';
             document.getElementById('inp-total').value = '';
             document.getElementById('inp-days').value = '';
@@ -440,45 +529,35 @@
             const item = items.find(i => i.id === currentItemId);
             if (item.progress[currentDayIndex] >= item.dailyGoal) return;
 
-            // 1. Asosiy hisobni oshiramiz
             item.progress[currentDayIndex]++;
             
-            // 2. GLOBAL (UMRBOD) hisobni oshiramiz va saqlaymiz
+            // GLOBAL STATISTIKA
             lifetime.count++;
-            saveLifetime();
+            
+            // TEZ SAQLASH (Cloudga va Localga)
+            saveAllData();
 
             if(settings.vib) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
             createDroplets();
 
             if (item.progress[currentDayIndex] >= item.dailyGoal) {
                 item.progress[currentDayIndex] = item.dailyGoal;
-                updateCircleUI(item); saveData();
+                updateCircleUI(item); saveAllData();
                 const allDone = item.progress.every(p => p >= item.dailyGoal);
                 
                 setTimeout(() => {
-                    if (sessionStart > 0) {
-                        const diff = Date.now() - sessionStart;
-                        item.totalTimeMs += diff;
-                        
-                        // GLOBAL Vaqtni oshiramiz
-                        lifetime.time += diff;
-                        saveLifetime();
-
-                        const dKey = new Date().toISOString().split('T')[0];
-                        item.history[dKey] = (item.history[dKey] || 0) + diff;
-                    }
-                    sessionStart = 0; currentDayIndex = null;
+                    closeView(); 
                     if (allDone) {
-                        item.status = 'completed'; saveData();
+                        item.status = 'completed'; saveAllData();
                         tg.showPopup({title:"Tabriklaymiz! 🏆", message:"Barcha kunlar muvaffaqiyatli yakunlandi!", buttons:[{type:"ok"}]}, function() {
                             navTo('page-home');
                         });
                     } else {
-                        saveData(); openDaysList(currentItemId);
+                        saveAllData(); openDaysList(currentItemId);
                     }
                 }, 1200);
             } else {
-                updateCircleUI(item); saveData();
+                updateCircleUI(item); saveAllData();
             }
         }
 
@@ -511,24 +590,23 @@
             document.getElementById('liq-bottom').style.height = (100 * ratio) + "%";
         }
 
-        function closeView() {
+        function closeView(isForce = false) {
             if (currentItemId && sessionStart > 0) {
                 const diff = Date.now() - sessionStart;
                 const item = items.find(i => i.id === currentItemId);
                 if(item) {
                     item.totalTimeMs += diff;
-                    
-                    // GLOBAL Vaqtni oshiramiz
                     lifetime.time += diff;
-                    saveLifetime();
-
                     const dKey = new Date().toISOString().split('T')[0];
                     item.history[dKey] = (item.history[dKey] || 0) + diff;
-                    saveData();
+                    saveAllData();
                 }
             }
-            sessionStart = 0; currentDayIndex = null;
-            openDaysList(currentItemId);
+            sessionStart = 0; 
+            if(!isForce) {
+                currentDayIndex = null;
+                openDaysList(currentItemId);
+            }
         }
 
         function deleteStatsItem() {
@@ -539,9 +617,8 @@
                 buttons: [{id: 'delete', type: 'destructive', text: "Ha"}, {id: 'cancel', type: 'cancel', text: "Yo'q"}]
             }, function(btnId) {
                 if (btnId === 'delete') {
-                    // Faqat items ro'yxatidan o'chiramiz, lifetime o'zgaruvchisiga tegmaymiz
                     items = items.filter(i => i.id !== currentItemId);
-                    saveData();
+                    saveAllData();
                     currentItemId = null;
                     navTo('page-stats');
                 }
@@ -591,20 +668,14 @@
             });
         }
 
-        // --- PROFIL EKRANI LOGIKASI ---
         function updateProfileUI() {
-            // Sonni yangilash
             document.getElementById('p-life-count').innerText = lifetime.count;
-
-            // Vaqtni chiroyli formatlash
             let totalMin = Math.floor(lifetime.time / 60000);
             let h = Math.floor(totalMin / 60);
             let m = totalMin % 60;
-            
             let timeText = "";
             if (h > 0) timeText += h + "s ";
             timeText += m + "m";
-            
             document.getElementById('p-life-time').innerText = timeText;
         }
 
@@ -617,7 +688,7 @@
             if(pageId === 'page-stats') { document.querySelectorAll('.nav-item')[1].classList.add('active'); renderStats(); }
             if(pageId === 'page-profile') {
                 document.querySelectorAll('.nav-item')[2].classList.add('active');
-                updateProfileUI(); // Profilga o'tganda ma'lumotni yangilash
+                updateProfileUI(); 
             }
         }
         
@@ -626,9 +697,10 @@
             document.getElementById('tg-dark').checked = settings.dark; document.getElementById('tg-vib').checked = settings.vib;
             try { const c = getComputedStyle(document.body).getPropertyValue('--bg').trim(); tg.setHeaderColor(c); tg.setBackgroundColor(c); } catch(e){}
         }
-        function toggleDark() { settings.dark = !settings.dark; applySettings(); saveSettings(); }
-        function toggleVib() { settings.vib = !settings.vib; saveSettings(); }
+        function toggleDark() { settings.dark = !settings.dark; applySettings(); saveAllData(); }
+        function toggleVib() { settings.vib = !settings.vib; saveAllData(); }
 
     </script>
 </body>
 </html>
+

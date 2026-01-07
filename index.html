@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Zikr Cloud Debug</title>
+    <title>Zikr Cloud Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -18,10 +18,8 @@
             --nav-bg: rgba(255, 255, 255, 0.85);
             --switch-off: #e9e9ea;
             --icon-inactive: #999999;
-            --liquid-blue: #00BFFF; 
-            --liquid-surface-blue: #87CEFA; 
+            --liquid-blue: #00BFFF; --liquid-surface-blue: #87CEFA;
         }
-
         body.dark-mode {
             --primary: #4ade80;
             --grad: linear-gradient(135deg, #4ade80 0%, #166534 100%);
@@ -32,50 +30,30 @@
             --nav-bg: rgba(30, 30, 30, 0.85);
             --switch-off: #39393d;
             --icon-inactive: #666666;
-            --liquid-blue: #00BFFF;
-            --liquid-surface-blue: #87CEFA;
+            --liquid-blue: #00BFFF; --liquid-surface-blue: #87CEFA;
         }
-
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg); color: var(--text);
-            margin: 0; padding: 0; height: 100vh;
-            display: flex; flex-direction: column; transition: 0.3s;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; transition: 0.3s; }
+        #loader { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
+        
+        #cloud-indicator { position: absolute; top: 15px; right: 15px; font-size: 11px; font-weight: bold; background: rgba(0,0,0,0.05); padding: 5px 10px; border-radius: 15px; display: flex; align-items: center; gap: 5px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
+        .dot.green { background: #22c55e; box-shadow: 0 0 5px #22c55e; }
+        .dot.red { background: #ff4757; }
+        .dot.anim { animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
 
-        #loader {
-            position: fixed; inset: 0; background: var(--bg); z-index: 1000;
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
-        }
-
-        /* Status Icon */
-        #cloud-status {
-            position: absolute; top: 15px; right: 15px; font-size: 12px; opacity: 0.7; display: flex; align-items: center; gap: 5px; font-weight: bold;
-        }
-
-        .page { 
-            display: none !important; 
-            flex: 1; flex-direction: column; 
-            padding: 20px; overflow-y: auto; padding-bottom: 100px; align-items: center; 
-        }
+        .page { display: none !important; flex: 1; flex-direction: column; padding: 20px; overflow-y: auto; padding-bottom: 100px; align-items: center; }
         .page.active { display: flex !important; }
-
         #page-view { justify-content: space-between; padding-bottom: 110px; }
-
-        .card {
-            background: var(--card); border-radius: 20px; padding: 20px; width: 100%;
-            margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);
-            text-align: center; transition: transform 0.2s;
-        }
+        .card { background: var(--card); border-radius: 20px; padding: 20px; width: 100%; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); text-align: center; transition: transform 0.2s; }
         .card:active { transform: scale(0.99); }
         .card.locked { opacity: 0.6; background: rgba(128,128,128,0.1); cursor: not-allowed; display: flex; justify-content: space-between; align-items: center; }
-
+        
         .settings-group { width: 100%; background: var(--card); border-radius: 12px; overflow: hidden; margin-top: 10px; }
         .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: var(--card); transition: 0.2s; }
         .switch-row:not(:last-child)::after { content: ''; position: absolute; bottom: 0; right: 0; width: calc(100% - 20px); height: 1px; background-color: var(--border); opacity: 0.5; }
         .switch-row:not(:last-child) { position: relative; }
-
         .switch { position: relative; display: inline-block; width: 51px; height: 31px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--switch-off); transition: .4s; border-radius: 34px; }
@@ -85,43 +63,23 @@
         
         .btn { background: var(--grad); color: white; border: none; padding: 15px; width: 100%; border-radius: 15px; font-weight: 600; font-size: 16px; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3); }
         .btn.danger { background: var(--danger); box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3); }
-        .btn.info { background: #007aff; } /* Debug tugmasi uchun */
+        .btn.blue { background: #007aff; box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3); }
         
-        input { width: 100%; padding: 15px; background: var(--card); border: none; border-radius: 15px; color: var(--text); margin-bottom: 12px; outline: none; text-align: center; }
+        input, textarea { width: 100%; padding: 15px; background: var(--card); border: none; border-radius: 15px; color: var(--text); margin-bottom: 12px; outline: none; text-align: center; }
+        textarea { border: 1px solid var(--border); min-height: 80px; font-size: 12px; }
 
         .profile-stats-row { display: flex; gap: 15px; width: 100%; margin-bottom: 20px; }
         .p-stat-box { flex: 1; background: var(--card); padding: 15px; border-radius: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: center; }
         .p-val { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 5px; }
         .p-lbl { font-size: 12px; opacity: 0.6; }
 
-        /* Debug Log Window */
-        #debug-console {
-            width: 100%; background: #000; color: #0f0; 
-            font-family: monospace; font-size: 10px; 
-            padding: 10px; border-radius: 10px; 
-            margin-top: 20px; height: 100px; overflow-y: scroll;
-            text-align: left; opacity: 0.8;
-        }
-
-        .circle-wrapper {
-            position: relative; width: 280px; height: 280px; min-width: 280px; min-height: 280px; flex-shrink: 0;
-            border-radius: 50%; background: var(--card); border: 4px solid var(--border);
-            overflow: hidden; cursor: pointer;
-            box-shadow: inset 0 0 40px rgba(0,0,0,0.05), 0 15px 35px rgba(0,0,0,0.1);
-            margin-top: auto; margin-bottom: 40px;
-            -webkit-mask-image: -webkit-radial-gradient(white, black);
-            mask-image: radial-gradient(white, black);
-        }
-
+        .circle-wrapper { position: relative; width: 280px; height: 280px; min-width: 280px; min-height: 280px; flex-shrink: 0; border-radius: 50%; background: var(--card); border: 4px solid var(--border); overflow: hidden; cursor: pointer; box-shadow: inset 0 0 40px rgba(0,0,0,0.05), 0 15px 35px rgba(0,0,0,0.1); margin-top: auto; margin-bottom: 40px; -webkit-mask-image: -webkit-radial-gradient(white, black); mask-image: radial-gradient(white, black); }
         .main-word-display { font-size: 32px; font-weight: 800; text-align: center; color: var(--text); margin: 20px 0; line-height: 1.2; word-wrap: break-word; padding: 0 20px; }
-
         .liquid-bottom { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: var(--liquid-blue); transition: height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 1; }
         .liquid-bottom::before { content: ''; position: absolute; top: -10px; left: 0; width: 100%; height: 20px; background: var(--liquid-surface-blue); border-radius: 50%; opacity: 0.7; animation: wave 2s infinite linear alternate; }
         @keyframes wave { from { transform: translateX(-2%) scaleY(0.8); } to { transform: translateX(2%) scaleY(1.2); } }
-
         .droplet { position: absolute; top: -15px; left: 50%; width: 12px; height: 12px; background: var(--liquid-blue); border-radius: 50% 50% 50% 0; transform: translateX(-50%) rotate(-45deg); z-index: 3; animation: dropFall 0.6s ease-in forwards; }
         @keyframes dropFall { to { top: 55%; opacity: 0; transform: translateX(-50%) rotate(-45deg) scale(0.4); } }
-
         .ripple { position: absolute; top: 0; left: 50%; width: 10px; height: 10px; border: 2px solid rgba(255,255,255,0.6); border-radius: 50%; transform: translate(-50%, -50%) scale(0); z-index: 4; animation: rippleAnim 0.6s ease-out forwards; }
         @keyframes rippleAnim { to { transform: translate(-50%, -50%) scale(5); opacity: 0; } }
         .glass-shine { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 25%); z-index: 10; pointer-events: none; }
@@ -133,10 +91,8 @@
         .nav-item.active svg { transform: translateY(-5px); filter: drop-shadow(0 5px 10px rgba(34, 197, 94, 0.4)); }
         .nav-dot { width: 5px; height: 5px; background: var(--primary); border-radius: 50%; margin-top: 5px; opacity: 0; transform: scale(0); transition: 0.3s; }
         .nav-item.active .nav-dot { opacity: 1; transform: scale(1); }
-
         .header-nav { width: 100%; display: flex; align-items: center; margin-bottom: 10px; flex-shrink: 0; }
         .back-btn { font-size: 24px; padding-right: 15px; cursor: pointer; }
-
     </style>
 </head>
 <body>
@@ -144,7 +100,7 @@
     <div id="loader"><h3>Yuklanmoqda...</h3></div>
 
     <div id="page-home" class="page active">
-        <div id="cloud-status">☁️ <span id="cloud-text">Kuting...</span></div>
+        <div id="cloud-indicator"><div class="dot" id="c-dot"></div> <span id="c-text">Oflayn</span></div>
 
         <h2 id="welcome-text" style="text-align:center">Assalomu alaykum</h2>
         <div class="card" onclick="navTo('page-create')" style="color:var(--primary); font-weight:bold; cursor:pointer; border: 2px dashed var(--primary); background: transparent;">
@@ -204,7 +160,7 @@
         <div class="card" style="height: 250px;">
             <canvas id="timeChart"></canvas>
         </div>
-        <button class="btn danger" onclick="deleteStatsItem()">🗑 Statistikani o'chirish</button>
+        <button class="btn danger" onclick="deleteStatsItem()">🗑 O'chirish</button>
     </div> 
     
     <div id="page-profile" class="page">
@@ -242,27 +198,27 @@
                 </label>
             </div>
         </div>
-        
-        <button class="btn info" style="margin-top: 15px;" onclick="forceSync()">🔄 Bulutni majburiy yangilash</button>
-        
-        <div id="debug-console">Loglar bu yerda chiqadi...</div>
 
-        <p style="margin-top:20px; opacity:0.4; font-size:12px">Created by Ego 🚀 (Debug Mode)</p>
+        <h3 style="margin-top:20px; margin-bottom:10px; font-size:16px">Sinxronizatsiya</h3>
+        <button class="btn info" onclick="forceSync()">🔄 Bulutni Yangilash (Cloud)</button>
+        <div style="height:10px"></div>
+        <button class="btn blue" style="background:#555; font-size:14px" onclick="toggleBackupTools()">🛠 Kod orqali o'tkazish (Backup)</button>
+        
+        <div id="backup-tools" style="display:none; margin-top:15px; background:var(--card); padding:10px; border-radius:15px; border:1px solid var(--border)">
+            <p style="font-size:12px; margin:5px 0">Agar Cloud ishlamasa, bu koddan foydalaning:</p>
+            <button class="btn" style="background:var(--primary); font-size:14px; padding:10px" onclick="exportData()">Kodni Nusxalash</button>
+            <div style="height:10px"></div>
+            <textarea id="import-area" placeholder="Kodni shu yerga tashlang..."></textarea>
+            <button class="btn" style="background:var(--text); color:var(--bg); font-size:14px; padding:10px" onclick="importData()">Kodni Tiklash</button>
+        </div>
+
+        <p style="margin-top:20px; opacity:0.4; font-size:12px">v20.0 Ultimate Sync</p>
     </div> 
     
     <div class="nav">
-        <div class="nav-item active" onclick="navTo('page-home')">
-            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-            <div class="nav-dot"></div>
-        </div>
-        <div class="nav-item" onclick="navTo('page-stats')">
-            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-            <div class="nav-dot"></div>
-        </div>
-        <div class="nav-item" onclick="navTo('page-profile')">
-            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            <div class="nav-dot"></div>
-        </div>
+        <div class="nav-item active" onclick="navTo('page-home')"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><div class="nav-dot"></div></div>
+        <div class="nav-item" onclick="navTo('page-stats')"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg><div class="nav-dot"></div></div>
+        <div class="nav-item" onclick="navTo('page-profile')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><div class="nav-dot"></div></div>
     </div>
 
     <script>
@@ -279,41 +235,38 @@
         let chartInstance = null;
         let saveInterval = null;
 
-        const CLOUD_KEY_ITEMS = 'zikr_data_v1';
-        const CLOUD_KEY_SETTINGS = 'zikr_set_v1';
-        const CLOUD_KEY_LIFE = 'zikr_life_v1';
+        const C_KEY_DATA = 'z_data_20';
+        const C_KEY_SET = 'z_set_20';
+        const C_KEY_LIFE = 'z_life_20';
 
-        function log(msg) {
-            const c = document.getElementById('debug-console');
-            const time = new Date().toLocaleTimeString();
-            c.innerHTML = `[${time}] ${msg}<br>` + c.innerHTML;
-            console.log(msg);
+        // --- STATUS INDICATOR ---
+        function setCloudStatus(status) {
+            const d = document.getElementById('c-dot');
+            const t = document.getElementById('c-text');
+            d.className = 'dot';
+            
+            if(status === 'loading') { d.classList.add('anim'); t.innerText = 'Yuklanmoqda...'; }
+            else if(status === 'ok') { d.classList.add('green'); t.innerText = 'Onlayn'; }
+            else if(status === 'error') { d.classList.add('red'); t.innerText = 'Xato'; }
+            else { t.innerText = 'Oflayn'; }
         }
 
         window.onload = function() {
             setTimeout(() => document.getElementById('loader').style.display = 'none', 1000);
             
-            // Tekshiruv: CloudStorage bormi?
-            if(!tg.CloudStorage) {
-                log("XATO: CloudStorage bu versiyada ishlamaydi! Telegramni yangilang.");
-                document.getElementById('cloud-text').innerText = "Qollab quvvatlanmaydi";
-                document.getElementById('cloud-status').style.color = "red";
-            } else {
-                log("CloudStorage aniqlandi.");
-            }
-
             loadFromLocal();
             initUser();
             
-            // Avtomatik yuklash
-            syncFromCloud();
+            // Avtomatik Cloud Sync
+            if(tg.CloudStorage) {
+                setCloudStatus('loading');
+                syncFromCloud();
+            } else {
+                setCloudStatus('off');
+            }
 
             saveInterval = setInterval(saveAllData, 5000);
-            
-            window.addEventListener("beforeunload", () => {
-                closeView(true);
-                saveAllData();
-            });
+            window.addEventListener("beforeunload", () => { closeView(true); saveAllData(); });
         };
 
         function initUser() {
@@ -330,10 +283,9 @@
         }
 
         function loadFromLocal() {
-            log("Local xotiradan yuklanmoqda...");
-            const d = localStorage.getItem('zikr_final_v14');
-            const s = localStorage.getItem('zikr_settings_v14');
-            const l = localStorage.getItem('zikr_lifetime_v16'); 
+            const d = localStorage.getItem(C_KEY_DATA);
+            const s = localStorage.getItem(C_KEY_SET);
+            const l = localStorage.getItem(C_KEY_LIFE);
 
             if(d) try { items = JSON.parse(d); } catch(e) { items = []; }
             if(s) try { settings = JSON.parse(s); } catch(e) { settings = { dark: false, vib: true }; }
@@ -343,6 +295,7 @@
             applySettings();
             recalculateGoals();
             renderList();
+            updateProfileUI();
         }
 
         function cleanOldItems() {
@@ -352,99 +305,112 @@
             });
         }
 
-        // --- CLOUD QISMI ---
+        // --- CLOUD LOGIC ---
         function syncFromCloud() {
             if (!tg.CloudStorage) return;
-            document.getElementById('cloud-text').innerText = "Yuklanmoqda...";
-            log("Bulutdan ma'lumot qidirilmoqda...");
-
-            tg.CloudStorage.getItem([CLOUD_KEY_ITEMS, CLOUD_KEY_SETTINGS, CLOUD_KEY_LIFE], (err, res) => {
+            
+            tg.CloudStorage.getItem([C_KEY_DATA, C_KEY_SET, C_KEY_LIFE], (err, res) => {
                 if (err) {
-                    log("CLOUD XATO: " + JSON.stringify(err));
-                    document.getElementById('cloud-text').innerText = "Xato!";
-                    document.getElementById('cloud-status').style.color = "red";
-                } else {
-                    if (res) {
-                        let imported = 0;
-                        if(res[CLOUD_KEY_ITEMS]) {
-                            try { 
-                                const cloudItems = JSON.parse(res[CLOUD_KEY_ITEMS]);
-                                // Agar bulutdagi ma'lumot localdan ko'p bo'lsa yoki yangiroq bo'lsa, qabul qilamiz
-                                // Oddiy yechim: Cloud ustun keladi
-                                if(cloudItems.length >= items.length) {
-                                    items = cloudItems; imported++; 
-                                }
-                            } catch(e){ log("Items parse error"); }
-                        }
-                        if(res[CLOUD_KEY_SETTINGS]) {
-                            try { settings = JSON.parse(res[CLOUD_KEY_SETTINGS]); imported++; } catch(e){}
-                        }
-                        if(res[CLOUD_KEY_LIFE]) {
-                            try { 
-                                const cLife = JSON.parse(res[CLOUD_KEY_LIFE]);
-                                if(cLife.count > lifetime.count) { lifetime = cLife; imported++; }
-                            } catch(e){}
-                        }
-
-                        if(imported > 0) {
-                            cleanOldItems();
-                            applySettings();
-                            recalculateGoals();
-                            renderList();
-                            updateProfileUI();
-                            log("Bulutdan " + imported + " ta blok yuklandi.");
-                            document.getElementById('cloud-text').innerText = "Sinxronlandi";
-                            document.getElementById('cloud-status').style.color = "var(--primary)";
-                        } else {
-                            log("Bulut bo'sh yoki eski.");
-                            document.getElementById('cloud-text').innerText = "Oflayn";
-                        }
-                    } else {
-                        log("Bulutdan javob bo'sh.");
+                    console.error(err);
+                    setCloudStatus('error');
+                } else if (res) {
+                    let imported = false;
+                    
+                    if(res[C_KEY_DATA]) {
+                        try { 
+                            const cItems = JSON.parse(res[C_KEY_DATA]);
+                            // Oddiy mantiq: Agar Cloud'da ko'proq element bo'lsa yoki local bo'sh bo'lsa
+                            if(cItems.length >= items.length) { items = cItems; imported = true; }
+                        } catch(e){}
                     }
+                    if(res[C_KEY_SET]) {
+                        try { settings = JSON.parse(res[C_KEY_SET]); imported = true; } catch(e){}
+                    }
+                    if(res[C_KEY_LIFE]) {
+                        try { 
+                            const cLife = JSON.parse(res[C_KEY_LIFE]);
+                            if(cLife.count > lifetime.count) { lifetime = cLife; imported = true; }
+                        } catch(e){}
+                    }
+
+                    if(imported) {
+                        cleanOldItems(); applySettings(); recalculateGoals(); renderList(); updateProfileUI();
+                    }
+                    setCloudStatus('ok');
                 }
             });
         }
 
         function saveAllData() {
             // Local
-            localStorage.setItem('zikr_final_v14', JSON.stringify(items));
-            localStorage.setItem('zikr_settings_v14', JSON.stringify(settings));
-            localStorage.setItem('zikr_lifetime_v16', JSON.stringify(lifetime));
+            localStorage.setItem(C_KEY_DATA, JSON.stringify(items));
+            localStorage.setItem(C_KEY_SET, JSON.stringify(settings));
+            localStorage.setItem(C_KEY_LIFE, JSON.stringify(lifetime));
 
             // Cloud
             if (tg.CloudStorage) {
-                const strItems = JSON.stringify(items);
-                // TEKSHIRUV: Ma'lumot juda kattami?
-                if(strItems.length > 4096) {
-                    log("XATO: Ma'lumot juda katta (" + strItems.length + " belgi). Bulutga sig'maydi!");
-                    document.getElementById('cloud-text').innerText = "Sig'madi ⚠️";
+                const sItems = JSON.stringify(items);
+                if(sItems.length > 4096) {
+                    setCloudStatus('error'); // Sig'madi
                     return;
                 }
-
-                tg.CloudStorage.setItem(CLOUD_KEY_ITEMS, strItems);
-                tg.CloudStorage.setItem(CLOUD_KEY_SETTINGS, JSON.stringify(settings));
-                tg.CloudStorage.setItem(CLOUD_KEY_LIFE, JSON.stringify(lifetime), (err, saved) => {
-                    if(err) {
-                        log("Saqlashda xato: " + JSON.stringify(err));
-                    } else if(saved) {
-                        // Jim saqlaymiz, logni to'ldirmaslik uchun
-                         document.getElementById('cloud-text').innerText = "Bulut OK";
-                         document.getElementById('cloud-status').style.color = "var(--primary)";
-                    }
+                tg.CloudStorage.setItem(C_KEY_DATA, sItems);
+                tg.CloudStorage.setItem(C_KEY_SET, JSON.stringify(settings));
+                tg.CloudStorage.setItem(C_KEY_LIFE, JSON.stringify(lifetime), (err, saved) => {
+                    if(!err && saved) setCloudStatus('ok');
                 });
             }
         }
-        
-        // Debug tugmasi uchun funksiya
+
         function forceSync() {
-            log("Majburiy sinxronlash boshlandi...");
-            // 1. Avval borini saqlashga urinamiz
+            setCloudStatus('loading');
             saveAllData();
-            // 2. Keyin qayta yuklaymiz
             setTimeout(syncFromCloud, 1000);
         }
 
+        // --- BACKUP TOOLS ---
+        function toggleBackupTools() {
+            const el = document.getElementById('backup-tools');
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function exportData() {
+            saveAllData();
+            const dataObj = { i: items, s: settings, l: lifetime };
+            const jsonStr = JSON.stringify(dataObj);
+            const encoded = btoa(unescape(encodeURIComponent(jsonStr))); 
+            
+            const area = document.getElementById('import-area');
+            area.value = encoded;
+            area.select();
+            try { 
+                document.execCommand('copy'); 
+                tg.showPopup({title:"Nusxalandi", message:"Kod nusxalandi! Endi uni ikkinchi telefonda 'Tiklash' ga qo'ying.", buttons:[{type:"ok"}]});
+            } catch(e){
+                tg.showAlert("Kodni o'zingiz nusxalab oling.");
+            }
+        }
+
+        function importData() {
+            const raw = document.getElementById('import-area').value;
+            if(!raw) return tg.showAlert("Kod bo'sh!");
+            try {
+                const jsonStr = decodeURIComponent(escape(atob(raw)));
+                const data = JSON.parse(jsonStr);
+                if(data.i) items = data.i;
+                if(data.s) settings = data.s;
+                if(data.l) lifetime = data.l;
+                
+                saveAllData();
+                loadFromLocal();
+                toggleBackupTools();
+                tg.showPopup({title:"Tayyor!", message:"Ma'lumotlar tiklandi ✅", buttons:[{type:"ok"}]});
+            } catch(e) {
+                tg.showAlert("Kod xato!");
+            }
+        }
+
+        // --- QOLGAN MANTIQ ---
         function recalculateGoals() {
             let changed = false;
             const today = new Date().setHours(0,0,0,0);
@@ -535,8 +501,7 @@
             item.progress[currentDayIndex]++;
             lifetime.count++;
             
-            saveAllData(); // Cloudga yozishga urinadi
-
+            saveAllData(); 
             if(settings.vib) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
             createDroplets();
 

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Zikr & Vocabulary Green</title>
+    <title>Zikr & Vocabulary Green App - Blue Liquid</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- RANGLAR O'ZGARTIRILDI (YASHIL) --- */
+        /* --- ASOSIY RANGLAR (YASHIL DIZAYN UCHUN) --- */
         :root {
-            --primary: #22c55e; /* Asosiy jonli yashil */
-            --grad: linear-gradient(135deg, #22c55e 0%, #059669 100%); /* Yashil gradient */
+            --primary: #22c55e; /* Asosiy Yashil */
+            --grad: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
             --danger: #ff4757;
             --bg: #f2f2f7;
             --text: #000000;
@@ -19,11 +19,15 @@
             --nav-bg: rgba(255, 255, 255, 0.85);
             --switch-off: #e9e9ea;
             --icon-inactive: #999999;
+
+            /* --- MAXSUS SUYUQLIK RANGLARI (MOVIY KO'K) --- */
+            --liquid-blue: #00BFFF; /* Deep Sky Blue - Tomchi va asosiy massa */
+            --liquid-surface-blue: #87CEFA; /* Light Sky Blue - Suv yuzasi to'lqini */
         }
 
         body.dark-mode {
-            --primary: #4ade80; /* Tungi rejim uchun yorqinroq yashil */
-            --grad: linear-gradient(135deg, #4ade80 0%, #34d399 100%); /* Tungi gradient */
+            --primary: #4ade80; /* Tungi yashil */
+            --grad: linear-gradient(135deg, #4ade80 0%, #166534 100%);
             --bg: #000000;
             --text: #ffffff;
             --card: #1c1c1e;
@@ -31,8 +35,11 @@
             --nav-bg: rgba(30, 30, 30, 0.85);
             --switch-off: #39393d;
             --icon-inactive: #666666;
+
+             /* Tungi rejimda ham suyuqlik ko'k bo'lib qoladi */
+            --liquid-blue: #00BFFF;
+            --liquid-surface-blue: #87CEFA;
         }
-        /* ---------------------------------------- */
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
@@ -49,6 +56,8 @@
 
         .page { display: none; flex: 1; flex-direction: column; padding: 20px; overflow-y: auto; padding-bottom: 100px; align-items: center; }
         .page.active { display: flex; }
+
+        #page-view { justify-content: space-between; padding-bottom: 110px; }
 
         .card {
             background: var(--card); border-radius: 20px; padding: 20px; width: 100%;
@@ -71,18 +80,83 @@
         input:checked + .slider { background-color: var(--primary); }
         input:checked + .slider:before { transform: translateX(20px); }
         
-        .btn { background: var(--grad); color: white; border: none; padding: 15px; width: 100%; border-radius: 15px; font-weight: 600; font-size: 16px; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3); } /* Shadow rangi ham yashil qilindi */
+        /* Tugma soyasi yashil */
+        .btn { background: var(--grad); color: white; border: none; padding: 15px; width: 100%; border-radius: 15px; font-weight: 600; font-size: 16px; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3); }
         .btn.danger { background: var(--danger); box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3); }
         
         input { width: 100%; padding: 15px; background: var(--card); border: none; border-radius: 15px; color: var(--text); margin-bottom: 12px; outline: none; text-align: center; }
 
-        /* Water Animation */
-        .water-container { width: 240px; height: 240px; margin: 30px auto; border-radius: 50%; background: var(--card); border: 4px solid var(--border); position: relative; overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.05); }
-        .wave { position: absolute; width: 200%; height: 200%; background: var(--primary); left: -50%; top: var(--level, 110%); border-radius: 40%; animation: spin 6s linear infinite; transition: top 0.5s; opacity: 0.8; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .counter-text { z-index: 10; font-size: 48px; font-weight: 800; color: var(--text); mix-blend-mode: exclusion; transition: font-size 0.3s; }
+        /* --- CIRCLE STYLES --- */
+        .circle-wrapper {
+            position: relative;
+            width: 280px; height: 280px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 4px solid var(--border);
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.05), 0 15px 35px rgba(0,0,0,0.1);
+            margin-top: auto; margin-bottom: 20px;
+            /* Maska ichidagi elementlarni doira shaklida ushlab turadi */
+            -webkit-mask-image: -webkit-radial-gradient(white, black);
+        }
 
-        /* Navigation */
+        /* Pastki suyuqlik (MOVIY KO'K) */
+        .liquid-bottom {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 0%;
+            background: var(--liquid-blue); /* Ko'k rang */
+            transition: height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 1;
+        }
+
+        /* To'lqin effekti (Och ko'k) */
+        .liquid-bottom::before {
+            content: ''; position: absolute;
+            top: -10px; left: 0; width: 100%; height: 20px;
+            background: var(--liquid-surface-blue); /* Och ko'k */
+            border-radius: 50%; opacity: 0.7;
+            animation: wave 2s infinite linear alternate;
+        }
+        @keyframes wave { from { transform: translateX(-2%) scaleY(0.8); } to { transform: translateX(2%) scaleY(1.2); } }
+
+        /* Tomchi (MOVIY KO'K) */
+        .droplet {
+            position: absolute; top: -15px; /* Doiradan tashqarida boshlanadi */
+            left: 50%;
+            width: 12px; height: 12px;
+            background: var(--liquid-blue); /* Ko'k rang */
+            border-radius: 50% 50% 50% 0;
+            transform: translateX(-50%) rotate(-45deg);
+            z-index: 3;
+            animation: dropFall 0.6s ease-in forwards;
+        }
+        @keyframes dropFall {
+            /* Pastga tushish animatsiyasi */
+            to { top: 55%; opacity: 0; transform: translateX(-50%) rotate(-45deg) scale(0.4); }
+        }
+
+        /* Chayqalish (Ripple) */
+        .ripple {
+            position: absolute; top: 0; left: 50%;
+            width: 10px; height: 10px;
+            border: 2px solid rgba(255,255,255,0.6);
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            z-index: 4;
+            animation: rippleAnim 0.6s ease-out forwards;
+        }
+        @keyframes rippleAnim {
+            to { transform: translate(-50%, -50%) scale(5); opacity: 0; }
+        }
+
+        /* Yaltiroq effekt */
+        .glass-shine {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 25%);
+            z-index: 10; pointer-events: none;
+        }
+
+        /* Navigation (Yashil soyali) */
         .nav {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             width: 90%; height: 70px;
@@ -97,7 +171,8 @@
         }
         .nav-item svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: 0.3s; }
         .nav-item.active { color: var(--primary); }
-        .nav-item.active svg { transform: translateY(-5px); filter: drop-shadow(0 5px 10px rgba(34, 197, 94, 0.4)); } /* Shadow yashil */
+        /* Ikonka soyasi yashil */
+        .nav-item.active svg { transform: translateY(-5px); filter: drop-shadow(0 5px 10px rgba(34, 197, 94, 0.4)); }
         .nav-dot { width: 5px; height: 5px; background: var(--primary); border-radius: 50%; margin-top: 5px; opacity: 0; transform: scale(0); transition: 0.3s; }
         .nav-item.active .nav-dot { opacity: 1; transform: scale(1); }
 
@@ -137,17 +212,21 @@
     </div>
 
     <div id="page-view" class="page">
-        <div class="header-nav">
-            <span class="back-btn" onclick="closeView()">⬅️</span>
-            <h3 id="view-title" style="margin:0">...</h3>
+        <div style="width:100%">
+            <div class="header-nav">
+                <span class="back-btn" onclick="closeView()">⬅️</span>
+                <h3 id="view-title" style="margin:0">...</h3>
+            </div>
+            <p style="text-align:center; opacity:0.7">Bugungi reja: <b id="view-goal">0</b></p>
         </div>
-        <p style="text-align:center; opacity:0.7">Bugungi reja: <b id="view-goal">0</b></p>
         
-        <div class="water-container" onclick="doCount()">
-            <div class="wave" id="wave"></div>
-            <div class="counter-text" id="view-count">0</div>
+        <div class="circle-wrapper" onclick="doCount()">
+            <div class="liquid-bottom" id="liq-bottom"></div>
+            
+            <div class="glass-shine"></div>
         </div>
-        <p style="text-align:center; font-size:12px; opacity:0.5">Sanash uchun bosing</p>
+        
+        <p style="text-align:center; font-size:12px; opacity:0.5; margin-bottom: 20px;">Sanash uchun doirani bosing</p>
     </div>
 
     <div id="page-stats" class="page">
@@ -194,7 +273,7 @@
                 </label>
             </div>
         </div>
-        <p style="margin-top:20px; opacity:0.4; font-size:12px">v5.1 Green Edition</p>
+        <p style="margin-top:20px; opacity:0.4; font-size:12px">v11.0 Green App - Blue Liquid</p>
     </div>
 
     <div class="nav">
@@ -243,16 +322,15 @@
         }
 
         function loadData() {
-            // Ma'lumotlar bazasi nomini o'zgartirmadim, eski ma'lumotlar qolishi uchun
-            const d = localStorage.getItem('zikr_final_v5');
-            const s = localStorage.getItem('zikr_settings_v5');
+            const d = localStorage.getItem('zikr_final_v11');
+            const s = localStorage.getItem('zikr_settings_v11');
             if(d) items = JSON.parse(d);
             if(s) settings = JSON.parse(s);
             applySettings();
             renderList();
         }
-        function saveData() { localStorage.setItem('zikr_final_v5', JSON.stringify(items)); }
-        function saveSettings() { localStorage.setItem('zikr_settings_v5', JSON.stringify(settings)); }
+        function saveData() { localStorage.setItem('zikr_final_v11', JSON.stringify(items)); }
+        function saveSettings() { localStorage.setItem('zikr_settings_v11', JSON.stringify(settings)); }
 
         function calcDaily() {
             const t = parseInt(document.getElementById('inp-total').value) || 0;
@@ -324,7 +402,7 @@
             document.getElementById('view-title').innerText = `${item.name} (${dayIdx+1}-kun)`;
             document.getElementById('view-goal').innerText = item.dailyGoal;
             
-            updateWaterUI(item);
+            updateCircleUI(item);
             navTo('page-view');
         }
 
@@ -336,10 +414,12 @@
 
             item.progress[currentDayIndex]++;
             if(settings.vib) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
+            
+            createDroplets(); // Tomchi tushirish
 
             if (item.progress[currentDayIndex] >= item.dailyGoal) {
                 item.progress[currentDayIndex] = item.dailyGoal;
-                updateWaterUI(item); 
+                updateCircleUI(item); 
                 saveData();
                 
                 const allDone = item.progress.every(p => p >= item.dailyGoal);
@@ -352,27 +432,45 @@
                     }
                 }, 1200);
             } else {
-                updateWaterUI(item);
+                updateCircleUI(item);
                 saveData();
             }
         }
 
-        function updateWaterUI(item) {
+        function createDroplets() {
+            const wrapper = document.querySelector('.circle-wrapper');
+            const bottomLiquid = document.getElementById('liq-bottom');
+            
+            for(let i=0; i<3; i++) {
+                setTimeout(() => {
+                    const drop = document.createElement('div');
+                    drop.className = 'droplet';
+                    // Tomchi yuqoridan tasodifiy joydan tushadi
+                    drop.style.left = (50 + (Math.random() * 10 - 5)) + '%';
+                    wrapper.appendChild(drop);
+                    setTimeout(() => { drop.remove(); }, 500);
+
+                    setTimeout(() => {
+                        const ripple = document.createElement('div');
+                        ripple.className = 'ripple';
+                        ripple.style.left = (50 + (Math.random() * 6 - 3)) + '%';
+                        bottomLiquid.appendChild(ripple);
+                         setTimeout(() => { ripple.remove(); }, 600);
+                    }, 450);
+                }, i * 80);
+            }
+        }
+
+        function updateCircleUI(item) {
             const cur = item.progress[currentDayIndex];
             const max = item.dailyGoal;
-            const countEl = document.getElementById('view-count');
             
-            if (cur >= max) {
-                countEl.innerText = "Bajarildi! ✅";
-                countEl.style.fontSize = "28px";
-            } else {
-                countEl.innerText = cur;
-                countEl.style.fontSize = "48px";
-            }
+            let ratio = cur / max;
+            if (ratio > 1) ratio = 1;
 
-            let p = (cur / max) * 100;
-            if (p > 100) p = 100;
-            document.getElementById('wave').style.setProperty('--level', (110 - p) + "%");
+            // Faqat pastki suyuqlikni to'ldiramiz
+            const botHeight = 100 * ratio;
+            document.getElementById('liq-bottom').style.height = botHeight + "%";
         }
 
         function closeView() {
@@ -425,7 +523,7 @@
             const list = items.filter(i => i.status === 'completed');
             if(list.length === 0) div.innerHTML = '<p style="text-align:center;opacity:0.5">Tarix bo\'sh</p>';
             list.forEach(item => {
-                const el = document.createElement('div'); el.className = 'card'; el.style.background = 'rgba(34, 197, 94, 0.2)'; /* Yashil fon */
+                const el = document.createElement('div'); el.className = 'card'; el.style.background = 'rgba(34, 197, 94, 0.2)';
                 el.onclick = () => showDetail(item.id);
                 el.innerHTML = `<b>${item.name} ✅</b><br><span style="font-size:12px">Statistika</span>`;
                 div.appendChild(el);
@@ -444,7 +542,6 @@
             const ctx = document.getElementById('timeChart').getContext('2d');
             const textColor = settings.dark ? '#fff' : '#000';
             
-            // Grafik rangini ham yashil qilamiz
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: { labels: Object.keys(item.history), datasets: [{ label: 'Vaqt (daqiqa)', data: Object.values(item.history).map(ms => (ms/60000).toFixed(1)), backgroundColor: '#22c55e', borderRadius: 6 }] },

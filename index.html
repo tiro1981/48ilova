@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Zikr & Vocabulary Cloud</title>
+    <title>Zikr Cloud Debug</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- ASOSIY RANGLAR --- */
         :root {
             --primary: #22c55e;
             --grad: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
@@ -50,9 +49,9 @@
             display: flex; justify-content: center; align-items: center; flex-direction: column;
         }
 
-        /* Status Icon (Cloud holati) */
+        /* Status Icon */
         #cloud-status {
-            position: absolute; top: 15px; right: 15px; font-size: 12px; opacity: 0.7; display: flex; align-items: center; gap: 5px;
+            position: absolute; top: 15px; right: 15px; font-size: 12px; opacity: 0.7; display: flex; align-items: center; gap: 5px; font-weight: bold;
         }
 
         .page { 
@@ -72,7 +71,6 @@
         .card:active { transform: scale(0.99); }
         .card.locked { opacity: 0.6; background: rgba(128,128,128,0.1); cursor: not-allowed; display: flex; justify-content: space-between; align-items: center; }
 
-        /* Settings */
         .settings-group { width: 100%; background: var(--card); border-radius: 12px; overflow: hidden; margin-top: 10px; }
         .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: var(--card); transition: 0.2s; }
         .switch-row:not(:last-child)::after { content: ''; position: absolute; bottom: 0; right: 0; width: calc(100% - 20px); height: 1px; background-color: var(--border); opacity: 0.5; }
@@ -87,27 +85,26 @@
         
         .btn { background: var(--grad); color: white; border: none; padding: 15px; width: 100%; border-radius: 15px; font-weight: 600; font-size: 16px; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3); }
         .btn.danger { background: var(--danger); box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3); }
+        .btn.info { background: #007aff; } /* Debug tugmasi uchun */
         
         input { width: 100%; padding: 15px; background: var(--card); border: none; border-radius: 15px; color: var(--text); margin-bottom: 12px; outline: none; text-align: center; }
 
-        /* --- PROFIL STATISTIKASI --- */
-        .profile-stats-row {
-            display: flex; gap: 15px; width: 100%; margin-bottom: 20px;
-        }
-        .p-stat-box {
-            flex: 1; background: var(--card); padding: 15px; border-radius: 15px;
-            text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-            display: flex; flex-direction: column; justify-content: center;
-        }
+        .profile-stats-row { display: flex; gap: 15px; width: 100%; margin-bottom: 20px; }
+        .p-stat-box { flex: 1; background: var(--card); padding: 15px; border-radius: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: center; }
         .p-val { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 5px; }
         .p-lbl { font-size: 12px; opacity: 0.6; }
 
-        /* --- DOIRA DIZAYNI --- */
+        /* Debug Log Window */
+        #debug-console {
+            width: 100%; background: #000; color: #0f0; 
+            font-family: monospace; font-size: 10px; 
+            padding: 10px; border-radius: 10px; 
+            margin-top: 20px; height: 100px; overflow-y: scroll;
+            text-align: left; opacity: 0.8;
+        }
+
         .circle-wrapper {
-            position: relative;
-            width: 280px; height: 280px;
-            min-width: 280px; min-height: 280px;
-            flex-shrink: 0;
+            position: relative; width: 280px; height: 280px; min-width: 280px; min-height: 280px; flex-shrink: 0;
             border-radius: 50%; background: var(--card); border: 4px solid var(--border);
             overflow: hidden; cursor: pointer;
             box-shadow: inset 0 0 40px rgba(0,0,0,0.05), 0 15px 35px rgba(0,0,0,0.1);
@@ -116,56 +113,21 @@
             mask-image: radial-gradient(white, black);
         }
 
-        .main-word-display {
-            font-size: 32px; font-weight: 800; text-align: center; color: var(--text);
-            margin: 20px 0; line-height: 1.2; word-wrap: break-word; padding: 0 20px;
-        }
+        .main-word-display { font-size: 32px; font-weight: 800; text-align: center; color: var(--text); margin: 20px 0; line-height: 1.2; word-wrap: break-word; padding: 0 20px; }
 
-        .liquid-bottom {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 0%;
-            background: var(--liquid-blue); transition: height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 1;
-        }
-        .liquid-bottom::before {
-            content: ''; position: absolute; top: -10px; left: 0; width: 100%; height: 20px;
-            background: var(--liquid-surface-blue); border-radius: 50%; opacity: 0.7;
-            animation: wave 2s infinite linear alternate;
-        }
+        .liquid-bottom { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: var(--liquid-blue); transition: height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 1; }
+        .liquid-bottom::before { content: ''; position: absolute; top: -10px; left: 0; width: 100%; height: 20px; background: var(--liquid-surface-blue); border-radius: 50%; opacity: 0.7; animation: wave 2s infinite linear alternate; }
         @keyframes wave { from { transform: translateX(-2%) scaleY(0.8); } to { transform: translateX(2%) scaleY(1.2); } }
 
-        .droplet {
-            position: absolute; top: -15px; left: 50%; width: 12px; height: 12px;
-            background: var(--liquid-blue); border-radius: 50% 50% 50% 0;
-            transform: translateX(-50%) rotate(-45deg); z-index: 3;
-            animation: dropFall 0.6s ease-in forwards;
-        }
+        .droplet { position: absolute; top: -15px; left: 50%; width: 12px; height: 12px; background: var(--liquid-blue); border-radius: 50% 50% 50% 0; transform: translateX(-50%) rotate(-45deg); z-index: 3; animation: dropFall 0.6s ease-in forwards; }
         @keyframes dropFall { to { top: 55%; opacity: 0; transform: translateX(-50%) rotate(-45deg) scale(0.4); } }
 
-        .ripple {
-            position: absolute; top: 0; left: 50%; width: 10px; height: 10px;
-            border: 2px solid rgba(255,255,255,0.6); border-radius: 50%;
-            transform: translate(-50%, -50%) scale(0); z-index: 4;
-            animation: rippleAnim 0.6s ease-out forwards;
-        }
+        .ripple { position: absolute; top: 0; left: 50%; width: 10px; height: 10px; border: 2px solid rgba(255,255,255,0.6); border-radius: 50%; transform: translate(-50%, -50%) scale(0); z-index: 4; animation: rippleAnim 0.6s ease-out forwards; }
         @keyframes rippleAnim { to { transform: translate(-50%, -50%) scale(5); opacity: 0; } }
+        .glass-shine { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 25%); z-index: 10; pointer-events: none; }
 
-        .glass-shine {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 25%);
-            z-index: 10; pointer-events: none;
-        }
-
-        .nav {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: 90%; height: 70px;
-            background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-radius: 25px; display: flex; justify-content: space-around; align-items: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1); z-index: 100;
-        }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            width: 60px; height: 100%; cursor: pointer;
-            color: var(--icon-inactive); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        .nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; height: 70px; background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1); z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 60px; height: 100%; cursor: pointer; color: var(--icon-inactive); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .nav-item svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: 0.3s; }
         .nav-item.active { color: var(--primary); }
         .nav-item.active svg { transform: translateY(-5px); filter: drop-shadow(0 5px 10px rgba(34, 197, 94, 0.4)); }
@@ -182,7 +144,7 @@
     <div id="loader"><h3>Yuklanmoqda...</h3></div>
 
     <div id="page-home" class="page active">
-        <div id="cloud-status">☁️ <span id="cloud-text">Oflayn</span></div>
+        <div id="cloud-status">☁️ <span id="cloud-text">Kuting...</span></div>
 
         <h2 id="welcome-text" style="text-align:center">Assalomu alaykum</h2>
         <div class="card" onclick="navTo('page-create')" style="color:var(--primary); font-weight:bold; cursor:pointer; border: 2px dashed var(--primary); background: transparent;">
@@ -193,10 +155,10 @@
     
     <div id="page-create" class="page">
         <h2>Yangi Reja</h2>
-        <input type="text" id="inp-name" placeholder="Nomi (masalan: Istig'for)">
-        <input type="number" id="inp-total" placeholder="Jami soni (100)" oninput="calcDaily()">
-        <input type="number" id="inp-days" placeholder="Kunlar (10)" oninput="calcDaily()">
-        <div style="width:100%; text-align:center; margin:10px 0; opacity:0.8; font-size:14px">Kuniga (taxminan): <b id="lbl-daily">0</b> ta</div>
+        <input type="text" id="inp-name" placeholder="Nomi">
+        <input type="number" id="inp-total" placeholder="Jami" oninput="calcDaily()">
+        <input type="number" id="inp-days" placeholder="Kunlar" oninput="calcDaily()">
+        <div style="width:100%; text-align:center; margin:10px 0; opacity:0.8; font-size:14px">Kuniga: <b id="lbl-daily">0</b></div>
         <button class="btn" onclick="createItem()">Boshlash</button>
         <button class="btn" style="background:transparent; color:var(--text); border:1px solid var(--border)" onclick="navTo('page-home')">Bekor qilish</button>
     </div> 
@@ -215,17 +177,13 @@
                 <span class="back-btn" onclick="closeView()">⬅️</span>
                 <div style="flex:1"></div>
             </div>
-            
             <p style="text-align:center; opacity:0.7; margin-bottom:5px">Bugungi reja: <b id="view-goal">0</b></p>
         </div>
-        
         <div class="main-word-display" id="view-word-name">...</div>
-        
         <div class="circle-wrapper" onclick="doCount()">
             <div class="liquid-bottom" id="liq-bottom"></div>
             <div class="glass-shine"></div>
         </div>
-        
         <p style="text-align:center; font-size:12px; opacity:0.5; margin-bottom: 20px; flex-shrink: 0;">Sanash uchun doirani bosing</p>
     </div> 
     
@@ -240,7 +198,7 @@
             <h3 id="detail-title" style="margin:0">Statistika</h3>
         </div>
         <div class="card">
-            <div style="font-size:12px; opacity:0.7">Umumiy sarflangan vaqt:</div>
+            <div style="font-size:12px; opacity:0.7">Umumiy vaqt:</div>
             <div style="font-size:24px; font-weight:bold; color:var(--primary)" id="detail-time">0 soat</div>
         </div>
         <div class="card" style="height: 250px;">
@@ -260,11 +218,11 @@
         <div class="profile-stats-row">
             <div class="p-stat-box">
                 <div class="p-val" id="p-life-count">0</div>
-                <div class="p-lbl">Jami bosildi</div>
+                <div class="p-lbl">Jami</div>
             </div>
             <div class="p-stat-box">
                 <div class="p-val" id="p-life-time">0m</div>
-                <div class="p-lbl">Umumiy vaqt</div>
+                <div class="p-lbl">Vaqt</div>
             </div>
         </div>
 
@@ -284,7 +242,12 @@
                 </label>
             </div>
         </div>
-        <p style="margin-top:20px; opacity:0.4; font-size:12px">v18.0 Cloud Sync Enabled ☁️</p>
+        
+        <button class="btn info" style="margin-top: 15px;" onclick="forceSync()">🔄 Bulutni majburiy yangilash</button>
+        
+        <div id="debug-console">Loglar bu yerda chiqadi...</div>
+
+        <p style="margin-top:20px; opacity:0.4; font-size:12px">Created by Ego 🚀 (Debug Mode)</p>
     </div> 
     
     <div class="nav">
@@ -316,22 +279,35 @@
         let chartInstance = null;
         let saveInterval = null;
 
-        // Cloud kalitlari
         const CLOUD_KEY_ITEMS = 'zikr_data_v1';
         const CLOUD_KEY_SETTINGS = 'zikr_set_v1';
         const CLOUD_KEY_LIFE = 'zikr_life_v1';
 
+        function log(msg) {
+            const c = document.getElementById('debug-console');
+            const time = new Date().toLocaleTimeString();
+            c.innerHTML = `[${time}] ${msg}<br>` + c.innerHTML;
+            console.log(msg);
+        }
+
         window.onload = function() {
             setTimeout(() => document.getElementById('loader').style.display = 'none', 1000);
             
-            // 1. Avval Localni yuklaymiz (Tez ochilishi uchun)
+            // Tekshiruv: CloudStorage bormi?
+            if(!tg.CloudStorage) {
+                log("XATO: CloudStorage bu versiyada ishlamaydi! Telegramni yangilang.");
+                document.getElementById('cloud-text').innerText = "Qollab quvvatlanmaydi";
+                document.getElementById('cloud-status').style.color = "red";
+            } else {
+                log("CloudStorage aniqlandi.");
+            }
+
             loadFromLocal();
             initUser();
             
-            // 2. Keyin Cloudni tekshiramiz (Sinxronizatsiya)
+            // Avtomatik yuklash
             syncFromCloud();
 
-            // Har 5 soniyada Cloudga va Localga saqlash
             saveInterval = setInterval(saveAllData, 5000);
             
             window.addEventListener("beforeunload", () => {
@@ -353,8 +329,8 @@
             }
         }
 
-        // --- LOCAL STORAGE LOGIKASI ---
         function loadFromLocal() {
+            log("Local xotiradan yuklanmoqda...");
             const d = localStorage.getItem('zikr_final_v14');
             const s = localStorage.getItem('zikr_settings_v14');
             const l = localStorage.getItem('zikr_lifetime_v16'); 
@@ -363,9 +339,7 @@
             if(s) try { settings = JSON.parse(s); } catch(e) { settings = { dark: false, vib: true }; }
             if(l) try { lifetime = JSON.parse(l); } catch(e) { lifetime = { count: 0, time: 0 }; }
 
-            // Eski completed itemlarni tozalash
             cleanOldItems();
-            
             applySettings();
             recalculateGoals();
             renderList();
@@ -378,68 +352,97 @@
             });
         }
 
-        // --- CLOUD STORAGE LOGIKASI (YANGI) ---
+        // --- CLOUD QISMI ---
         function syncFromCloud() {
-            document.getElementById('cloud-text').innerText = "Ulanmoqda...";
-            
-            // CloudStorage ishlayaptimi tekshirish
-            if (!tg.CloudStorage) {
-                document.getElementById('cloud-text').innerText = "Bulut yo'q";
-                return;
-            }
+            if (!tg.CloudStorage) return;
+            document.getElementById('cloud-text').innerText = "Yuklanmoqda...";
+            log("Bulutdan ma'lumot qidirilmoqda...");
 
             tg.CloudStorage.getItem([CLOUD_KEY_ITEMS, CLOUD_KEY_SETTINGS, CLOUD_KEY_LIFE], (err, res) => {
                 if (err) {
-                    console.error("Cloud Error:", err);
-                    document.getElementById('cloud-text').innerText = "Xato";
+                    log("CLOUD XATO: " + JSON.stringify(err));
+                    document.getElementById('cloud-text').innerText = "Xato!";
+                    document.getElementById('cloud-status').style.color = "red";
                 } else {
                     if (res) {
-                        // Agar Cloud bo'sh bo'lmasa, uni qabul qilamiz
-                        let hasNewData = false;
-                        
+                        let imported = 0;
                         if(res[CLOUD_KEY_ITEMS]) {
-                            try { items = JSON.parse(res[CLOUD_KEY_ITEMS]); hasNewData = true; } catch(e){}
+                            try { 
+                                const cloudItems = JSON.parse(res[CLOUD_KEY_ITEMS]);
+                                // Agar bulutdagi ma'lumot localdan ko'p bo'lsa yoki yangiroq bo'lsa, qabul qilamiz
+                                // Oddiy yechim: Cloud ustun keladi
+                                if(cloudItems.length >= items.length) {
+                                    items = cloudItems; imported++; 
+                                }
+                            } catch(e){ log("Items parse error"); }
                         }
                         if(res[CLOUD_KEY_SETTINGS]) {
-                            try { settings = JSON.parse(res[CLOUD_KEY_SETTINGS]); hasNewData = true; } catch(e){}
+                            try { settings = JSON.parse(res[CLOUD_KEY_SETTINGS]); imported++; } catch(e){}
                         }
                         if(res[CLOUD_KEY_LIFE]) {
-                            try { lifetime = JSON.parse(res[CLOUD_KEY_LIFE]); hasNewData = true; } catch(e){}
+                            try { 
+                                const cLife = JSON.parse(res[CLOUD_KEY_LIFE]);
+                                if(cLife.count > lifetime.count) { lifetime = cLife; imported++; }
+                            } catch(e){}
                         }
 
-                        if(hasNewData) {
+                        if(imported > 0) {
                             cleanOldItems();
                             applySettings();
                             recalculateGoals();
                             renderList();
                             updateProfileUI();
-                            console.log("Cloud synced!");
+                            log("Bulutdan " + imported + " ta blok yuklandi.");
+                            document.getElementById('cloud-text').innerText = "Sinxronlandi";
+                            document.getElementById('cloud-status').style.color = "var(--primary)";
+                        } else {
+                            log("Bulut bo'sh yoki eski.");
+                            document.getElementById('cloud-text').innerText = "Oflayn";
                         }
-                        document.getElementById('cloud-text').innerText = "Sinxronlandi ✅";
-                        document.getElementById('cloud-status').style.color = "var(--primary)";
                     } else {
-                        document.getElementById('cloud-text').innerText = "Bo'sh";
+                        log("Bulutdan javob bo'sh.");
                     }
                 }
             });
         }
 
         function saveAllData() {
-            // 1. Localga saqlash (Zudlik bilan)
+            // Local
             localStorage.setItem('zikr_final_v14', JSON.stringify(items));
             localStorage.setItem('zikr_settings_v14', JSON.stringify(settings));
             localStorage.setItem('zikr_lifetime_v16', JSON.stringify(lifetime));
 
-            // 2. Cloudga saqlash (Orqa fonda)
+            // Cloud
             if (tg.CloudStorage) {
-                tg.CloudStorage.setItem(CLOUD_KEY_ITEMS, JSON.stringify(items));
+                const strItems = JSON.stringify(items);
+                // TEKSHIRUV: Ma'lumot juda kattami?
+                if(strItems.length > 4096) {
+                    log("XATO: Ma'lumot juda katta (" + strItems.length + " belgi). Bulutga sig'maydi!");
+                    document.getElementById('cloud-text').innerText = "Sig'madi ⚠️";
+                    return;
+                }
+
+                tg.CloudStorage.setItem(CLOUD_KEY_ITEMS, strItems);
                 tg.CloudStorage.setItem(CLOUD_KEY_SETTINGS, JSON.stringify(settings));
                 tg.CloudStorage.setItem(CLOUD_KEY_LIFE, JSON.stringify(lifetime), (err, saved) => {
-                    if(!err && saved) {
-                        document.getElementById('cloud-text').innerText = "Saqlandi ✅";
+                    if(err) {
+                        log("Saqlashda xato: " + JSON.stringify(err));
+                    } else if(saved) {
+                        // Jim saqlaymiz, logni to'ldirmaslik uchun
+                         document.getElementById('cloud-text').innerText = "Bulut OK";
+                         document.getElementById('cloud-status').style.color = "var(--primary)";
                     }
                 });
             }
+        }
+        
+        // Debug tugmasi uchun funksiya
+        function forceSync() {
+            log("Majburiy sinxronlash boshlandi...");
+            // 1. Avval borini saqlashga urinamiz
+            saveAllData();
+            // 2. Keyin qayta yuklaymiz
+            setTimeout(syncFromCloud, 1000);
         }
 
         function recalculateGoals() {
@@ -530,12 +533,9 @@
             if (item.progress[currentDayIndex] >= item.dailyGoal) return;
 
             item.progress[currentDayIndex]++;
-            
-            // GLOBAL STATISTIKA
             lifetime.count++;
             
-            // TEZ SAQLASH (Cloudga va Localga)
-            saveAllData();
+            saveAllData(); // Cloudga yozishga urinadi
 
             if(settings.vib) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
             createDroplets();
@@ -544,7 +544,6 @@
                 item.progress[currentDayIndex] = item.dailyGoal;
                 updateCircleUI(item); saveAllData();
                 const allDone = item.progress.every(p => p >= item.dailyGoal);
-                
                 setTimeout(() => {
                     closeView(); 
                     if (allDone) {
@@ -703,4 +702,3 @@
     </script>
 </body>
 </html>
-

@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- ASOSIY RANGLAR VA SOZLAMALAR --- */
+        /* --- DIZAYN (O'ZGARMAGAN) --- */
         :root {
             --primary: #22c55e;
             --grad: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
@@ -19,8 +19,6 @@
             --nav-bg: rgba(255, 255, 255, 0.85);
             --switch-off: #e9e9ea;
             --icon-inactive: #999999;
-            
-            /* Suv ranglari */
             --water-color: #38bdf8;
             --water-dark: #0ea5e9;
             --water-grad: linear-gradient(to top, #0284c7, #38bdf8);
@@ -50,7 +48,7 @@
         }
 
         #loader {
-            position: fixed; inset: 0; background: var(--bg); z-index: 1000;
+            position: fixed; inset: 0; background: var(--bg); z-index: 9999;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
         }
 
@@ -58,21 +56,11 @@
             position: absolute; top: 15px; right: 15px; font-size: 12px; opacity: 0.7; display: flex; align-items: center; gap: 5px;
         }
 
-        .page { 
-            display: none !important; 
-            flex: 1; flex-direction: column; 
-            padding: 20px; overflow-y: auto; padding-bottom: 100px; align-items: center; 
-        }
+        .page { display: none !important; flex: 1; flex-direction: column; padding: 20px; overflow-y: auto; padding-bottom: 100px; align-items: center; }
         .page.active { display: flex !important; }
-
         #page-view { justify-content: space-between; padding-bottom: 110px; }
 
-        /* KARTALAR VA TUGMALAR */
-        .card {
-            background: var(--card); border-radius: 20px; padding: 20px; width: 100%;
-            margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02);
-            text-align: center; transition: transform 0.2s;
-        }
+        .card { background: var(--card); border-radius: 20px; padding: 20px; width: 100%; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); text-align: center; transition: transform 0.2s; }
         .card:active { transform: scale(0.99); }
         .card.locked { opacity: 0.6; background: rgba(128,128,128,0.1); cursor: not-allowed; display: flex; justify-content: space-between; align-items: center; }
 
@@ -80,109 +68,43 @@
         .btn.danger { background: var(--danger); box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3); }
         input { width: 100%; padding: 15px; background: var(--card); border: none; border-radius: 15px; color: var(--text); margin-bottom: 12px; outline: none; text-align: center; }
 
-        /* Settings va Profil stillari */
         .settings-group { width: 100%; background: var(--card); border-radius: 12px; overflow: hidden; margin-top: 10px; }
-        .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: var(--card); transition: 0.2s; }
+        .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: var(--card); transition: 0.2s; position: relative; }
         .switch-row:not(:last-child)::after { content: ''; position: absolute; bottom: 0; right: 0; width: calc(100% - 20px); height: 1px; background-color: var(--border); opacity: 0.5; }
-        .switch-row:not(:last-child) { position: relative; }
         .switch { position: relative; display: inline-block; width: 51px; height: 31px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--switch-off); transition: .4s; border-radius: 34px; }
         .slider:before { position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
         input:checked + .slider { background-color: var(--primary); }
         input:checked + .slider:before { transform: translateX(20px); }
+
         .profile-stats-row { display: flex; gap: 15px; width: 100%; margin-bottom: 20px; }
         .p-stat-box { flex: 1; background: var(--card); padding: 15px; border-radius: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: center; }
         .p-val { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 5px; }
         .p-lbl { font-size: 12px; opacity: 0.6; }
 
-        /* --- 3D DOIRA VA SUV ANIMATSIYASI --- */
+        /* --- 3D DOIRA VA SUV --- */
         .circle-wrapper {
-            position: relative;
-            width: 280px; height: 280px;
-            min-width: 280px; min-height: 280px;
-            border-radius: 50%; 
-            background: var(--card);
-            box-shadow: 
-                inset 10px 10px 20px rgba(0,0,0,0.1), 
-                inset -5px -5px 15px rgba(255,255,255,0.5),
-                0 15px 35px rgba(0,0,0,0.15),
-                0 0 0 4px var(--card);
-            border: 1px solid var(--border);
-            overflow: hidden; cursor: pointer;
-            margin-top: auto; margin-bottom: 40px;
-            z-index: 1;
+            position: relative; width: 280px; height: 280px; min-width: 280px; min-height: 280px;
+            border-radius: 50%; background: var(--card);
+            box-shadow: inset 10px 10px 20px rgba(0,0,0,0.1), inset -5px -5px 15px rgba(255,255,255,0.5), 0 15px 35px rgba(0,0,0,0.15), 0 0 0 4px var(--card);
+            border: 1px solid var(--border); overflow: hidden; cursor: pointer; margin-top: auto; margin-bottom: 40px; z-index: 1;
         }
-
-        .main-word-display {
-            font-size: 32px; font-weight: 800; text-align: center; color: var(--text);
-            margin: 20px 0; line-height: 1.2; word-wrap: break-word; padding: 0 20px;
-        }
-
-        /* Suv qismi */
-        .liquid-container {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 0%;
-            transition: height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            z-index: 2;
-        }
-
+        .main-word-display { font-size: 32px; font-weight: 800; text-align: center; color: var(--text); margin: 20px 0; line-height: 1.2; word-wrap: break-word; padding: 0 20px; }
+        .liquid-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; transition: height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 2; }
         .liquid-body { width: 100%; height: 100%; background: var(--water-grad); }
-
-        /* To'lqinlar */
-        .wave {
-            position: absolute; top: -15px; left: 0; width: 200%; height: 30px;
-            background-repeat: repeat-x; background-size: 50% 100%;
-            border-radius: 1000% 1000% 0 0; opacity: 1;
-        }
+        .wave { position: absolute; top: -15px; left: 0; width: 200%; height: 30px; background-repeat: repeat-x; background-size: 50% 100%; border-radius: 1000% 1000% 0 0; opacity: 1; }
         .wave-front { background-color: var(--water-color); animation: waveMove 4s linear infinite; z-index: 3; opacity: 0.8; }
         .wave-back { background-color: var(--water-dark); top: -20px; animation: waveMove 7s linear infinite reverse; z-index: 2; opacity: 0.5; }
-        @keyframes waveMove { 
-            0% { transform: translateX(0) scaleY(1); } 
-            50% { transform: translateX(-25%) scaleY(0.8); }
-            100% { transform: translateX(-50%) scaleY(1); } 
-        }
-
-        /* Tomchi */
-        .droplet {
-            position: absolute; top: -20px; left: 50%; width: 14px; height: 14px;
-            background: var(--water-color); border-radius: 0 50% 50% 50%;
-            transform: translateX(-50%) rotate(45deg); z-index: 5;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        /* Splash */
-        .splash-particle {
-            position: absolute; width: 6px; height: 6px; background: var(--water-color);
-            border-radius: 50%; z-index: 6; pointer-events: none;
-        }
-        .ripple {
-            position: absolute; left: 50%; width: 10px; height: 4px;
-            border: 2px solid rgba(255,255,255,0.8); border-radius: 50%;
-            transform: translate(-50%, -50%) scale(0); z-index: 4;
-            animation: rippleAnim 0.6s ease-out forwards;
-        }
+        @keyframes waveMove { 0% { transform: translateX(0) scaleY(1); } 50% { transform: translateX(-25%) scaleY(0.8); } 100% { transform: translateX(-50%) scaleY(1); } }
+        .droplet { position: absolute; top: -20px; left: 50%; width: 14px; height: 14px; background: var(--water-color); border-radius: 0 50% 50% 50%; transform: translateX(-50%) rotate(45deg); z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .splash-particle { position: absolute; width: 6px; height: 6px; background: var(--water-color); border-radius: 50%; z-index: 6; pointer-events: none; }
+        .ripple { position: absolute; left: 50%; width: 10px; height: 4px; border: 2px solid rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%) scale(0); z-index: 4; animation: rippleAnim 0.6s ease-out forwards; }
         @keyframes rippleAnim { to { transform: translate(-50%, -50%) scale(8); opacity: 0; border-width: 0; } }
+        .glass-shine { position: absolute; top: 10%; left: 10%; width: 40%; height: 20%; background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%); border-radius: 50%; transform: rotate(-45deg); z-index: 10; pointer-events: none; filter: blur(2px); }
 
-        .glass-shine {
-            position: absolute; top: 10%; left: 10%; width: 40%; height: 20%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%);
-            border-radius: 50%; transform: rotate(-45deg);
-            z-index: 10; pointer-events: none; filter: blur(2px);
-        }
-
-        /* Navigatsiya */
-        .nav {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: 90%; height: 70px;
-            background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-radius: 25px; display: flex; justify-content: space-around; align-items: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1); z-index: 100;
-        }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            width: 60px; height: 100%; cursor: pointer;
-            color: var(--icon-inactive); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        .nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; height: 70px; background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1); z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 60px; height: 100%; cursor: pointer; color: var(--icon-inactive); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .nav-item svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: 0.3s; }
         .nav-item.active { color: var(--primary); }
         .nav-item.active svg { transform: translateY(-5px); filter: drop-shadow(0 5px 10px rgba(34, 197, 94, 0.4)); }
@@ -190,15 +112,17 @@
         .nav-item.active .nav-dot { opacity: 1; transform: scale(1); }
         .header-nav { width: 100%; display: flex; align-items: center; margin-bottom: 10px; flex-shrink: 0; }
         .back-btn { font-size: 24px; padding-right: 15px; cursor: pointer; }
-
     </style>
 </head>
 <body>
 
-    <div id="loader"><h3>Yuklanmoqda...</h3></div>
+    <div id="loader">
+        <h3 style="margin-bottom:10px">Yuklanmoqda...</h3>
+        <p style="font-size:12px; opacity:0.6" id="loader-msg">Bulut bilan ulanish</p>
+    </div>
 
     <div id="page-home" class="page active">
-        <div id="cloud-status">☁️ <span id="cloud-text">Oflayn</span></div>
+        <div id="cloud-status">☁️ <span id="cloud-text">Kutish...</span></div>
         <h2 id="welcome-text" style="text-align:center">Assalomu alaykum</h2>
         <div class="card" onclick="navTo('page-create')" style="color:var(--primary); font-weight:bold; cursor:pointer; border: 2px dashed var(--primary); background: transparent;">
             + Yangi maqsad
@@ -232,9 +156,7 @@
             </div>
             <p style="text-align:center; opacity:0.7; margin-bottom:5px">Bugungi reja: <b id="view-goal">0</b></p>
         </div>
-        
         <div class="main-word-display" id="view-word-name">...</div>
-        
         <div class="circle-wrapper" onclick="doCount()" id="circle-area">
             <div class="liquid-container" id="liq-container">
                 <div class="wave wave-back"></div>
@@ -243,7 +165,6 @@
             </div>
             <div class="glass-shine"></div>
         </div>
-        
         <p style="text-align:center; font-size:12px; opacity:0.5; margin-bottom: 20px; flex-shrink: 0;">Sanash uchun doirani bosing</p>
     </div> 
     
@@ -330,21 +251,31 @@
         let sessionStart = 0;
         let chartInstance = null;
         let saveInterval = null;
-        let isAnimating = false;
 
-        // HIMOYA: Bulut yuklanganini tekshirish uchun
-        let isCloudLoaded = false; 
+        // HIMOYA KALITI
+        let isCloudSynced = false; 
 
         const CLOUD_KEY_ITEMS = 'zikr_data_v1';
         const CLOUD_KEY_SETTINGS = 'zikr_set_v1';
         const CLOUD_KEY_LIFE = 'zikr_life_v1';
 
         window.onload = function() {
+            // Localni yuklaymiz (lekin hali saqlashga ruxsat yo'q)
             loadFromLocal();
             initUser();
-            // Bulutdan yuklashni boshlaymiz, loader ketmay turadi
+            
+            // Bulutdan yuklashni majburiy kutamiz
             syncFromCloud();
-            saveInterval = setInterval(saveAllData, 3000);
+            
+            // Xavfsizlik uchun: agar 10 soniyada bulutdan javob kelmasa,
+            // baribir ilovani ochamiz, lekin "SAQLASH" funksiyasini ehtiyotkor qilamiz.
+            setTimeout(() => {
+                if(!isCloudSynced) {
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('cloud-text').innerText = "Oflayn/Xato";
+                }
+            }, 10000);
+
             window.addEventListener("beforeunload", () => { closeView(true); saveAllData(); });
         };
 
@@ -354,8 +285,8 @@
                 document.getElementById('u-name').innerText = u.first_name;
                 document.getElementById('welcome-text').innerText = "Salom, " + u.first_name;
                 if(u.photo_url) {
-                    const img = document.getElementById('u-ava-img');
-                    img.src = u.photo_url; img.style.display = 'block';
+                    document.getElementById('u-ava-img').src = u.photo_url;
+                    document.getElementById('u-ava-img').style.display = 'block';
                     document.getElementById('u-ava-ph').style.display = 'none';
                 }
             }
@@ -368,66 +299,86 @@
             if(d) try { items = JSON.parse(d); } catch(e) { items = []; }
             if(s) try { settings = JSON.parse(s); } catch(e) { settings = { dark: false, vib: true }; }
             if(l) try { lifetime = JSON.parse(l); } catch(e) { lifetime = { count: 0, time: 0 }; }
-            cleanOldItems(); applySettings(); recalculateGoals(); renderList();
-        }
-
-        function cleanOldItems() {
-            items.forEach(item => {
-                const totalDone = item.progress.reduce((a, b) => a + b, 0);
-                if (totalDone >= item.total) item.status = 'completed';
-            });
+            // Eslatma: Bu yerda UI yangilanadi, lekin saqlash (save) bo'lmaydi.
+            applySettings(); renderList();
         }
 
         function syncFromCloud() {
-            document.getElementById('cloud-text').innerText = "Ulanmoqda...";
+            document.getElementById('loader-msg').innerText = "Ma'lumotlar tekshirilmoqda...";
+            
             if (!tg.CloudStorage) {
-                document.getElementById('cloud-text').innerText = "Bulut yo'q";
+                // Agar bulut umuman yo'q bo'lsa (brauzerda), ruxsat beramiz
+                isCloudSynced = true;
                 document.getElementById('loader').style.display = 'none';
-                isCloudLoaded = true; 
                 return;
             }
 
             tg.CloudStorage.getItem([CLOUD_KEY_ITEMS, CLOUD_KEY_SETTINGS, CLOUD_KEY_LIFE], (err, res) => {
                 if (!err && res) {
-                    let hasNew = false;
-                    if(res[CLOUD_KEY_ITEMS] && res[CLOUD_KEY_ITEMS].length > 2) { 
-                        try { items = JSON.parse(res[CLOUD_KEY_ITEMS]); hasNew = true; } catch(e){}
-                    }
-                    if(res[CLOUD_KEY_SETTINGS]) { 
-                        try { settings = JSON.parse(res[CLOUD_KEY_SETTINGS]); hasNew = true; } catch(e){}
-                    }
-                    if(res[CLOUD_KEY_LIFE]) { 
-                        try { lifetime = JSON.parse(res[CLOUD_KEY_LIFE]); hasNew = true; } catch(e){}
+                    let cloudItems = [];
+                    let cloudSet = null;
+                    let cloudLife = null;
+
+                    // Bulut ma'lumotlarini o'qiymiz
+                    try { if(res[CLOUD_KEY_ITEMS]) cloudItems = JSON.parse(res[CLOUD_KEY_ITEMS]); } catch(e){}
+                    try { if(res[CLOUD_KEY_SETTINGS]) cloudSet = JSON.parse(res[CLOUD_KEY_SETTINGS]); } catch(e){}
+                    try { if(res[CLOUD_KEY_LIFE]) cloudLife = JSON.parse(res[CLOUD_KEY_LIFE]); } catch(e){}
+
+                    // MANTIQ: Agar yangi telefonda bo'lsak (Local bo'sh), Bulutdan olamiz.
+                    if (items.length === 0 && cloudItems.length > 0) {
+                        items = cloudItems;
+                        if(cloudSet) settings = cloudSet;
+                        if(cloudLife) lifetime = cloudLife;
+                        console.log("Bulutdan ma'lumot tiklandi!");
+                    } 
+                    // Yoki bulutdagi ma'lumot ko'proq bo'lsa, yangilaymiz
+                    else if (cloudItems.length > items.length) {
+                        items = cloudItems; // Bulut ustunlik qiladi
                     }
 
-                    if(hasNew) { 
-                        cleanOldItems(); applySettings(); recalculateGoals(); renderList(); updateProfileUI(); 
-                    }
+                    cleanOldItems(); applySettings(); recalculateGoals(); renderList(); updateProfileUI();
+                    
                     document.getElementById('cloud-text').innerText = "Sinxronlandi ✅";
                     document.getElementById('cloud-status').style.color = "var(--primary)";
                 } else {
                     document.getElementById('cloud-text').innerText = "Bo'sh / Xato";
                 }
-                
-                // Bulut tekshirildi, endi xavfsiz
-                isCloudLoaded = true;
+
+                // ENG MUHIMI: Bulutdan javob keldi, endi saqlashga ruxsat beramiz
+                isCloudSynced = true;
                 document.getElementById('loader').style.display = 'none';
+                
+                // Avtomatik saqlashni endi yoqamiz
+                if(saveInterval) clearInterval(saveInterval);
+                saveInterval = setInterval(saveAllData, 5000);
             });
         }
 
         function saveAllData() {
+            // 1. Localga har doim saqlaymiz
             localStorage.setItem('zikr_final_v14', JSON.stringify(items));
             localStorage.setItem('zikr_settings_v14', JSON.stringify(settings));
             localStorage.setItem('zikr_lifetime_v16', JSON.stringify(lifetime));
 
-            // Agar bulut hali yuklanmagan bo'lsa, ustiga yozmaymiz
-            if (!isCloudLoaded) return;
+            // 2. Bulutga faqat RUXSAT BO'LSA saqlaymiz
+            if (!isCloudSynced) {
+                console.log("Saqlash bloklandi: Bulut hali yuklanmadi");
+                return;
+            }
 
             if (tg.CloudStorage) {
                 tg.CloudStorage.setItem(CLOUD_KEY_ITEMS, JSON.stringify(items));
                 tg.CloudStorage.setItem(CLOUD_KEY_SETTINGS, JSON.stringify(settings));
                 tg.CloudStorage.setItem(CLOUD_KEY_LIFE, JSON.stringify(lifetime));
             }
+        }
+
+        // --- Qolgan funksiyalar (o'zgarishsiz) ---
+        function cleanOldItems() {
+            items.forEach(item => {
+                const totalDone = item.progress.reduce((a, b) => a + b, 0);
+                if (totalDone >= item.total) item.status = 'completed';
+            });
         }
 
         function recalculateGoals() {
@@ -534,47 +485,31 @@
             const cur = item.progress[currentDayIndex] - 1; 
             const max = item.dailyGoal;
             let percent = (cur / max) * 100;
-            if(percent > 100) percent = 100;
-            if(percent < 5) percent = 5; 
+            if(percent > 100) percent = 100; if(percent < 5) percent = 5; 
 
             const drop = document.createElement('div');
             drop.className = 'droplet';
             wrapper.appendChild(drop);
-
-            const fallDuration = 500; 
-            const surfaceTop = 100 - percent; 
-
+            const fallDuration = 500; const surfaceTop = 100 - percent; 
             const anim = drop.animate([
                 { top: '-20px', opacity: 1, transform: 'translateX(-50%) rotate(45deg) scale(1)' },
                 { top: `calc(${surfaceTop}% - 10px)`, opacity: 1, transform: 'translateX(-50%) rotate(45deg) scale(0.8)' }
-            ], {
-                duration: fallDuration,
-                easing: 'cubic-bezier(0.55, 0.06, 0.68, 0.19)'
-            });
-
-            anim.onfinish = () => {
-                drop.remove();
-                createSplash(surfaceTop);
-            };
+            ], { duration: fallDuration, easing: 'cubic-bezier(0.55, 0.06, 0.68, 0.19)' });
+            anim.onfinish = () => { drop.remove(); createSplash(surfaceTop); };
         }
 
         function createSplash(topPercent) {
             const wrapper = document.getElementById('circle-area');
             const ripple = document.createElement('div');
-            ripple.className = 'ripple';
-            ripple.style.top = topPercent + '%';
+            ripple.className = 'ripple'; ripple.style.top = topPercent + '%';
             wrapper.appendChild(ripple);
             setTimeout(() => ripple.remove(), 600);
-
             const particleCount = 6;
             for(let i=0; i<particleCount; i++) {
                 const p = document.createElement('div');
-                p.className = 'splash-particle';
-                p.style.top = topPercent + '%';
-                p.style.left = '50%';
+                p.className = 'splash-particle'; p.style.top = topPercent + '%'; p.style.left = '50%';
                 wrapper.appendChild(p);
-                const randomX = (Math.random() - 0.5) * 60; 
-                const randomY = -20 - Math.random() * 30;   
+                const randomX = (Math.random() - 0.5) * 60; const randomY = -20 - Math.random() * 30;   
                 p.animate([
                     { transform: 'translate(0, 0) scale(1)', opacity: 1 },
                     { transform: `translate(${randomX}px, ${randomY}px) scale(0)`, opacity: 0 }
@@ -585,8 +520,7 @@
         function updateCircleUI(item) {
             const cur = item.progress[currentDayIndex];
             const max = item.dailyGoal;
-            let ratio = cur / max;
-            if (ratio > 1) ratio = 1;
+            let ratio = cur / max; if (ratio > 1) ratio = 1;
             document.getElementById('liq-container').style.height = (100 * ratio) + "%";
         }
 

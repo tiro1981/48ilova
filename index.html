@@ -20,7 +20,7 @@
             --switch-off: #e9e9ea;
             --icon-inactive: #999999;
             
-            /* Suv ranglari (Yorqinroq va chiroyli) */
+            /* Suv ranglari */
             --water-color: #38bdf8;
             --water-dark: #0ea5e9;
             --water-grad: linear-gradient(to top, #0284c7, #38bdf8);
@@ -96,14 +96,13 @@
         .p-val { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 5px; }
         .p-lbl { font-size: 12px; opacity: 0.6; }
 
-        /* --- YANGILANGAN DOIRA VA SUV ANIMATSIYASI --- */
+        /* --- 3D DOIRA VA SUV ANIMATSIYASI --- */
         .circle-wrapper {
             position: relative;
             width: 280px; height: 280px;
             min-width: 280px; min-height: 280px;
             border-radius: 50%; 
             background: var(--card);
-            /* Ichki soya va tashqi soya - 3D effekt */
             box-shadow: 
                 inset 10px 10px 20px rgba(0,0,0,0.1), 
                 inset -5px -5px 15px rgba(255,255,255,0.5),
@@ -127,75 +126,43 @@
             z-index: 2;
         }
 
-        .liquid-body {
-            width: 100%; height: 100%;
-            background: var(--water-grad);
-        }
+        .liquid-body { width: 100%; height: 100%; background: var(--water-grad); }
 
-        /* To'lqinlar (2 qavat) */
+        /* To'lqinlar */
         .wave {
             position: absolute; top: -15px; left: 0; width: 200%; height: 30px;
-            background-repeat: repeat-x;
-            background-size: 50% 100%;
-            border-radius: 1000% 1000% 0 0;
-            opacity: 1;
+            background-repeat: repeat-x; background-size: 50% 100%;
+            border-radius: 1000% 1000% 0 0; opacity: 1;
         }
-
-        .wave-front {
-            background-color: var(--water-color);
-            animation: waveMove 4s linear infinite;
-            z-index: 3;
-            opacity: 0.8;
-        }
-
-        .wave-back {
-            background-color: var(--water-dark);
-            top: -20px;
-            animation: waveMove 7s linear infinite reverse;
-            z-index: 2;
-            opacity: 0.5;
-        }
-
+        .wave-front { background-color: var(--water-color); animation: waveMove 4s linear infinite; z-index: 3; opacity: 0.8; }
+        .wave-back { background-color: var(--water-dark); top: -20px; animation: waveMove 7s linear infinite reverse; z-index: 2; opacity: 0.5; }
         @keyframes waveMove { 
             0% { transform: translateX(0) scaleY(1); } 
             50% { transform: translateX(-25%) scaleY(0.8); }
             100% { transform: translateX(-50%) scaleY(1); } 
         }
 
-        /* Tomchi (Droplet) */
+        /* Tomchi */
         .droplet {
-            position: absolute; top: -20px; left: 50%; 
-            width: 14px; height: 14px;
-            background: var(--water-color);
-            border-radius: 0 50% 50% 50%; /* Haqiqiy tomchi shakli */
-            transform: translateX(-50%) rotate(45deg); 
-            z-index: 5;
+            position: absolute; top: -20px; left: 50%; width: 14px; height: 14px;
+            background: var(--water-color); border-radius: 0 50% 50% 50%;
+            transform: translateX(-50%) rotate(45deg); z-index: 5;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            /* Animatsiya JS orqali boshqariladi */
         }
 
-        /* Suv sachrashi (Splash particles) */
+        /* Splash */
         .splash-particle {
-            position: absolute; width: 6px; height: 6px;
-            background: var(--water-color);
-            border-radius: 50%;
-            z-index: 6;
-            pointer-events: none;
+            position: absolute; width: 6px; height: 6px; background: var(--water-color);
+            border-radius: 50%; z-index: 6; pointer-events: none;
         }
-
-        /* Yuzadagi halqa (Ripple) */
         .ripple {
-            position: absolute; left: 50%; 
-            width: 10px; height: 4px;
-            border: 2px solid rgba(255,255,255,0.8);
-            border-radius: 50%;
-            transform: translate(-50%, -50%) scale(0);
-            z-index: 4;
+            position: absolute; left: 50%; width: 10px; height: 4px;
+            border: 2px solid rgba(255,255,255,0.8); border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0); z-index: 4;
             animation: rippleAnim 0.6s ease-out forwards;
         }
         @keyframes rippleAnim { to { transform: translate(-50%, -50%) scale(8); opacity: 0; border-width: 0; } }
 
-        /* Shisha yaltirashi (Glass reflection) */
         .glass-shine {
             position: absolute; top: 10%; left: 10%; width: 40%; height: 20%;
             background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%);
@@ -363,18 +330,21 @@
         let sessionStart = 0;
         let chartInstance = null;
         let saveInterval = null;
-        let isAnimating = false; // Bosishni cheklash uchun
+        let isAnimating = false;
+
+        // HIMOYA: Bulut yuklanganini tekshirish uchun
+        let isCloudLoaded = false; 
 
         const CLOUD_KEY_ITEMS = 'zikr_data_v1';
         const CLOUD_KEY_SETTINGS = 'zikr_set_v1';
         const CLOUD_KEY_LIFE = 'zikr_life_v1';
 
         window.onload = function() {
-            setTimeout(() => document.getElementById('loader').style.display = 'none', 1000);
             loadFromLocal();
             initUser();
+            // Bulutdan yuklashni boshlaymiz, loader ketmay turadi
             syncFromCloud();
-            saveInterval = setInterval(saveAllData, 5000);
+            saveInterval = setInterval(saveAllData, 3000);
             window.addEventListener("beforeunload", () => { closeView(true); saveAllData(); });
         };
 
@@ -410,17 +380,38 @@
 
         function syncFromCloud() {
             document.getElementById('cloud-text').innerText = "Ulanmoqda...";
-            if (!tg.CloudStorage) { document.getElementById('cloud-text').innerText = "Bulut yo'q"; return; }
+            if (!tg.CloudStorage) {
+                document.getElementById('cloud-text').innerText = "Bulut yo'q";
+                document.getElementById('loader').style.display = 'none';
+                isCloudLoaded = true; 
+                return;
+            }
+
             tg.CloudStorage.getItem([CLOUD_KEY_ITEMS, CLOUD_KEY_SETTINGS, CLOUD_KEY_LIFE], (err, res) => {
                 if (!err && res) {
                     let hasNew = false;
-                    if(res[CLOUD_KEY_ITEMS]) { items = JSON.parse(res[CLOUD_KEY_ITEMS]); hasNew = true; }
-                    if(res[CLOUD_KEY_SETTINGS]) { settings = JSON.parse(res[CLOUD_KEY_SETTINGS]); hasNew = true; }
-                    if(res[CLOUD_KEY_LIFE]) { lifetime = JSON.parse(res[CLOUD_KEY_LIFE]); hasNew = true; }
-                    if(hasNew) { cleanOldItems(); applySettings(); recalculateGoals(); renderList(); updateProfileUI(); }
+                    if(res[CLOUD_KEY_ITEMS] && res[CLOUD_KEY_ITEMS].length > 2) { 
+                        try { items = JSON.parse(res[CLOUD_KEY_ITEMS]); hasNew = true; } catch(e){}
+                    }
+                    if(res[CLOUD_KEY_SETTINGS]) { 
+                        try { settings = JSON.parse(res[CLOUD_KEY_SETTINGS]); hasNew = true; } catch(e){}
+                    }
+                    if(res[CLOUD_KEY_LIFE]) { 
+                        try { lifetime = JSON.parse(res[CLOUD_KEY_LIFE]); hasNew = true; } catch(e){}
+                    }
+
+                    if(hasNew) { 
+                        cleanOldItems(); applySettings(); recalculateGoals(); renderList(); updateProfileUI(); 
+                    }
                     document.getElementById('cloud-text').innerText = "Sinxronlandi ✅";
                     document.getElementById('cloud-status').style.color = "var(--primary)";
-                } else document.getElementById('cloud-text').innerText = "Xato/Bo'sh";
+                } else {
+                    document.getElementById('cloud-text').innerText = "Bo'sh / Xato";
+                }
+                
+                // Bulut tekshirildi, endi xavfsiz
+                isCloudLoaded = true;
+                document.getElementById('loader').style.display = 'none';
             });
         }
 
@@ -428,6 +419,10 @@
             localStorage.setItem('zikr_final_v14', JSON.stringify(items));
             localStorage.setItem('zikr_settings_v14', JSON.stringify(settings));
             localStorage.setItem('zikr_lifetime_v16', JSON.stringify(lifetime));
+
+            // Agar bulut hali yuklanmagan bo'lsa, ustiga yozmaymiz
+            if (!isCloudLoaded) return;
+
             if (tg.CloudStorage) {
                 tg.CloudStorage.setItem(CLOUD_KEY_ITEMS, JSON.stringify(items));
                 tg.CloudStorage.setItem(CLOUD_KEY_SETTINGS, JSON.stringify(settings));
@@ -504,33 +499,20 @@
             navTo('page-view');
         }
 
-        // --- ASOSIY ANIMATSIYA LOGIKASI ---
         function doCount() {
             if (currentItemId === null || currentDayIndex === null) return;
-            // Tez bosishni oldini olish (Animatsiya tugaguncha kutish shart emas, lekin vizual chalkashlik bo'lmasligi uchun)
-            // Lekin foydalanuvchi tez bosishni xohlasa, buni o'chirib qo'yish mumkin. 
-            // Hozirgi holatda har bir bosish alohida tomchi hosil qiladi.
-            
             const item = items.find(i => i.id === currentItemId);
             if (item.progress[currentDayIndex] >= item.dailyGoal) return;
 
-            // 1. Ma'lumotni yangilash
             item.progress[currentDayIndex]++;
             lifetime.count++;
             
-            // 2. Vibratsiya
             if(settings.vib) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
-            
-            // 3. Animatsiyani chaqirish
             triggerDropEffect(item);
-
-            // 4. UI va saqlash
             saveAllData();
             
             if (item.progress[currentDayIndex] >= item.dailyGoal) {
-                // Maqsadga yetganda oxirgi update
-                setTimeout(() => updateCircleUI(item), 600); // Tomchi tushib bo'lgach suv ko'tariladi
-                
+                setTimeout(() => updateCircleUI(item), 600);
                 const allDone = item.progress.every(p => p >= item.dailyGoal);
                 setTimeout(() => {
                     closeView(); 
@@ -542,7 +524,6 @@
                     }
                 }, 1500);
             } else {
-                // Har bir bosishda suv darajasini biroz kechikib ko'tarish (realistik bo'lishi uchun)
                 setTimeout(() => updateCircleUI(item), 500);
             }
         }
@@ -550,35 +531,25 @@
         function triggerDropEffect(item) {
             const wrapper = document.getElementById('circle-area');
             const liquid = document.getElementById('liq-container');
-            
-            // Hozirgi suv balandligini hisoblash (%)
-            const cur = item.progress[currentDayIndex] - 1; // Hozirgi bosishdan oldingi holat
+            const cur = item.progress[currentDayIndex] - 1; 
             const max = item.dailyGoal;
             let percent = (cur / max) * 100;
             if(percent > 100) percent = 100;
-            if(percent < 5) percent = 5; // Juda past bo'lmasligi uchun
+            if(percent < 5) percent = 5; 
 
-            // Tomchi yaratish
             const drop = document.createElement('div');
             drop.className = 'droplet';
             wrapper.appendChild(drop);
 
-            // Tomchi tushish masofasini hisoblash (Suv yuzasigacha)
-            // Konteyner balandligi 280px. 
-            // Suv balandligi % da.
-            // Tomchi tepadan (0px) suv yuzasiga (100% - percent%) tushishi kerak.
-            
-            // Animatsiya
-            const fallDuration = 500; // ms
-            const surfaceTop = 100 - percent; // % tepadan
+            const fallDuration = 500; 
+            const surfaceTop = 100 - percent; 
 
-            // Web Animation API dan foydalanamiz, aniqroq boshqarish uchun
             const anim = drop.animate([
                 { top: '-20px', opacity: 1, transform: 'translateX(-50%) rotate(45deg) scale(1)' },
                 { top: `calc(${surfaceTop}% - 10px)`, opacity: 1, transform: 'translateX(-50%) rotate(45deg) scale(0.8)' }
             ], {
                 duration: fallDuration,
-                easing: 'cubic-bezier(0.55, 0.06, 0.68, 0.19)' // Gravity effect (tezlashish)
+                easing: 'cubic-bezier(0.55, 0.06, 0.68, 0.19)'
             });
 
             anim.onfinish = () => {
@@ -589,16 +560,12 @@
 
         function createSplash(topPercent) {
             const wrapper = document.getElementById('circle-area');
-            const liquid = document.getElementById('liq-container');
-
-            // 1. Ripple (Halqa)
             const ripple = document.createElement('div');
             ripple.className = 'ripple';
             ripple.style.top = topPercent + '%';
             wrapper.appendChild(ripple);
             setTimeout(() => ripple.remove(), 600);
 
-            // 2. Splash Particles (Sachrash) - Parchalanib ketish effekti
             const particleCount = 6;
             for(let i=0; i<particleCount; i++) {
                 const p = document.createElement('div');
@@ -606,18 +573,12 @@
                 p.style.top = topPercent + '%';
                 p.style.left = '50%';
                 wrapper.appendChild(p);
-
-                // Tasodifiy yo'nalish
-                const randomX = (Math.random() - 0.5) * 60; // -30px dan +30px gacha
-                const randomY = -20 - Math.random() * 30;   // Yuqoriga uchish
-                
+                const randomX = (Math.random() - 0.5) * 60; 
+                const randomY = -20 - Math.random() * 30;   
                 p.animate([
                     { transform: 'translate(0, 0) scale(1)', opacity: 1 },
                     { transform: `translate(${randomX}px, ${randomY}px) scale(0)`, opacity: 0 }
-                ], {
-                    duration: 400 + Math.random() * 200,
-                    easing: 'ease-out'
-                }).onfinish = () => p.remove();
+                ], { duration: 400 + Math.random() * 200, easing: 'ease-out' }).onfinish = () => p.remove();
             }
         }
 
@@ -626,7 +587,6 @@
             const max = item.dailyGoal;
             let ratio = cur / max;
             if (ratio > 1) ratio = 1;
-            // Suv balandligini o'zgartirish
             document.getElementById('liq-container').style.height = (100 * ratio) + "%";
         }
 

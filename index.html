@@ -260,19 +260,16 @@
         const CLOUD_KEY_LIFE = 'zikr_life_v1';
 
         window.onload = function() {
-            // Localni yuklaymiz (lekin hali saqlashga ruxsat yo'q)
             loadFromLocal();
             initUser();
-            
-            // Bulutdan yuklashni majburiy kutamiz
             syncFromCloud();
             
-            // Xavfsizlik uchun: agar 10 soniyada bulutdan javob kelmasa,
-            // baribir ilovani ochamiz, lekin "SAQLASH" funksiyasini ehtiyotkor qilamiz.
+            // 10 soniyada javob kelmasa, offline ochamiz
             setTimeout(() => {
                 if(!isCloudSynced) {
                     document.getElementById('loader').style.display = 'none';
-                    document.getElementById('cloud-text').innerText = "Oflayn/Xato";
+                    document.getElementById('cloud-text').innerText = "Oflayn";
+                    isCloudSynced = true; // Majburiy ruxsat beramiz
                 }
             }, 10000);
 
@@ -299,72 +296,80 @@
             if(d) try { items = JSON.parse(d); } catch(e) { items = []; }
             if(s) try { settings = JSON.parse(s); } catch(e) { settings = { dark: false, vib: true }; }
             if(l) try { lifetime = JSON.parse(l); } catch(e) { lifetime = { count: 0, time: 0 }; }
-            // Eslatma: Bu yerda UI yangilanadi, lekin saqlash (save) bo'lmaydi.
             applySettings(); renderList();
         }
 
+        // --- TUZATILGAN BULUT FUNKSIYASI ---
         function syncFromCloud() {
             document.getElementById('loader-msg').innerText = "Ma'lumotlar tekshirilmoqda...";
             
             if (!tg.CloudStorage) {
-                // Agar bulut umuman yo'q bo'lsa (brauzerda), ruxsat beramiz
-                isCloudSynced = true;
+                isCloudSynced = true; // Bulut yo'q bo'lsa ham ishlashga ruxsat
                 document.getElementById('loader').style.display = 'none';
                 return;
             }
 
             tg.CloudStorage.getItem([CLOUD_KEY_ITEMS, CLOUD_KEY_SETTINGS, CLOUD_KEY_LIFE], (err, res) => {
-                if (!err && res) {
-                    let cloudItems = [];
-                    let cloudSet = null;
-                    let cloudLife = null;
+                // AGAR HAQIQIY XATO BO'LSA
+                if (err) {
+                    console.error(err);
+                    document.getElementById('cloud-text').innerText = "Xato!";
+                    // Xato bo'lsa ham ilovani ochamiz, lekin ehtiyot bo'lish kerak
+                    isCloudSynced = true; 
+                    document.getElementById('loader').style.display = 'none';
+                    return;
+                }
 
-                    // Bulut ma'lumotlarini o'qiymiz
+                // JAVOB KELDI (Bo'sh bo'lsa ham)
+                let cloudItems = [];
+                let cloudSet = null;
+                let cloudLife = null;
+
+                if (res) {
                     try { if(res[CLOUD_KEY_ITEMS]) cloudItems = JSON.parse(res[CLOUD_KEY_ITEMS]); } catch(e){}
                     try { if(res[CLOUD_KEY_SETTINGS]) cloudSet = JSON.parse(res[CLOUD_KEY_SETTINGS]); } catch(e){}
                     try { if(res[CLOUD_KEY_LIFE]) cloudLife = JSON.parse(res[CLOUD_KEY_LIFE]); } catch(e){}
+                }
 
-                    // MANTIQ: Agar yangi telefonda bo'lsak (Local bo'sh), Bulutdan olamiz.
-                    if (items.length === 0 && cloudItems.length > 0) {
+                // 1. Agar bulutda ma'lumot bo'lsa, uni olamiz
+                if (cloudItems.length > 0) {
+                    // Agar telefonda kamroq ma'lumot bo'lsa, bulutni ustun qo'yamiz
+                    if (cloudItems.length >= items.length) {
                         items = cloudItems;
                         if(cloudSet) settings = cloudSet;
                         if(cloudLife) lifetime = cloudLife;
-                        console.log("Bulutdan ma'lumot tiklandi!");
-                    } 
-                    // Yoki bulutdagi ma'lumot ko'proq bo'lsa, yangilaymiz
-                    else if (cloudItems.length > items.length) {
-                        items = cloudItems; // Bulut ustunlik qiladi
+                        console.log("Bulutdan yuklandi.");
                     }
-
-                    cleanOldItems(); applySettings(); recalculateGoals(); renderList(); updateProfileUI();
-                    
-                    document.getElementById('cloud-text').innerText = "Sinxronlandi ✅";
-                    document.getElementById('cloud-status').style.color = "var(--primary)";
-                } else {
-                    document.getElementById('cloud-text').innerText = "Bo'sh / Xato";
+                } 
+                // 2. Agar bulut bo'sh bo'lsa-yu, telefonda ma'lumot bo'lsa -> Demak, yuklash kerak
+                else if (items.length > 0) {
+                    console.log("Bulut bo'sh, telefondan yuklanadi.");
+                    // Bu holatda biz hech narsani o'chirmaymiz, aksincha saqlashga ruxsat beramiz
                 }
 
-                // ENG MUHIMI: Bulutdan javob keldi, endi saqlashga ruxsat beramiz
+                cleanOldItems(); applySettings(); recalculateGoals(); renderList(); updateProfileUI();
+                
+                document.getElementById('cloud-text').innerText = "Sinxronlandi ✅";
+                document.getElementById('cloud-status').style.color = "var(--primary)";
+
+                // RUXSAT BERAMIZ VA DARHOL SAQLAYMIZ
                 isCloudSynced = true;
                 document.getElementById('loader').style.display = 'none';
                 
-                // Avtomatik saqlashni endi yoqamiz
+                // Avtomatik saqlashni yoqamiz
                 if(saveInterval) clearInterval(saveInterval);
                 saveInterval = setInterval(saveAllData, 5000);
+                saveAllData(); // Hozirning o'zida bir marta saqlab yuboramiz
             });
         }
 
         function saveAllData() {
-            // 1. Localga har doim saqlaymiz
             localStorage.setItem('zikr_final_v14', JSON.stringify(items));
             localStorage.setItem('zikr_settings_v14', JSON.stringify(settings));
             localStorage.setItem('zikr_lifetime_v16', JSON.stringify(lifetime));
 
-            // 2. Bulutga faqat RUXSAT BO'LSA saqlaymiz
-            if (!isCloudSynced) {
-                console.log("Saqlash bloklandi: Bulut hali yuklanmadi");
-                return;
-            }
+            // Agar ruxsat bo'lmasa, saqlamaymiz
+            if (!isCloudSynced) return;
 
             if (tg.CloudStorage) {
                 tg.CloudStorage.setItem(CLOUD_KEY_ITEMS, JSON.stringify(items));
@@ -373,7 +378,7 @@
             }
         }
 
-        // --- Qolgan funksiyalar (o'zgarishsiz) ---
+        // --- QOLGAN FUNKSIYALAR O'ZGARISHSIZ ---
         function cleanOldItems() {
             items.forEach(item => {
                 const totalDone = item.progress.reduce((a, b) => a + b, 0);

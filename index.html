@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Zikr & Vocabulary</title>
+    <title>Zikr & Vocabulary (Gold)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div id="loader">
-        <h3 style="margin-bottom:10px">Yuklanmoqda...</h3>
-        <p style="font-size:12px; opacity:0.6" id="loader-msg">Xavfsiz ulanish</p>
+        <h3 style="margin-bottom:10px">Sinxronlash...</h3>
+        <p style="font-size:12px; opacity:0.6">Bulut tekshirilmoqda</p>
     </div>
 
     <div id="page-home" class="page active">
@@ -25,12 +26,12 @@
     
     <div id="page-create" class="page">
         <h2>Yangi Reja</h2>
-        <input type="text" id="inp-name" placeholder="Nomi (masalan: Istig'for)">
-        <input type="number" id="inp-total" placeholder="Jami soni (100)" oninput="calcDaily()">
-        <input type="number" id="inp-days" placeholder="Kunlar (10)" oninput="calcDaily()">
+        <input type="text" id="inp-name" placeholder="Nomi">
+        <input type="number" id="inp-total" placeholder="Jami soni" oninput="calcDaily()">
+        <input type="number" id="inp-days" placeholder="Kunlar" oninput="calcDaily()">
         <div style="width:100%; text-align:center; margin:10px 0; opacity:0.8; font-size:14px">Kuniga: <b id="lbl-daily">0</b> ta</div>
         <button class="btn" onclick="createItem()">Boshlash</button>
-        <button class="btn" style="background:transparent; color:var(--text); border:1px solid var(--border)" onclick="navTo('page-home')">Bekor qilish</button>
+        <button class="btn secondary" onclick="navTo('page-home')">Bekor qilish</button>
     </div> 
     
     <div id="page-days" class="page">
@@ -113,6 +114,9 @@
                     <span class="slider"></span>
                 </label>
             </div>
+        </div>
+        <div style="margin-top:20px; text-align:center;">
+             <button class="btn secondary" onclick="forceCloudSync()" style="font-size:12px; padding:10px;">☁️ Bulutdan qayta yuklash</button>
         </div>
     </div> 
     

@@ -3,243 +3,631 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Zikr Cloud Protected</title>
+    <title>Zikr & Vocabulary (Protected)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- DIZAYN QISMI (O'zgarmadi) --- */
-        :root { --primary: #22c55e; --grad: linear-gradient(135deg, #22c55e 0%, #15803d 100%); --bg: #f2f2f7; --text: #000; --card: #fff; --nav-bg: rgba(255,255,255,0.9); }
-        body.dark-mode { --primary: #4ade80; --grad: linear-gradient(135deg, #4ade80 0%, #166534 100%); --bg: #000; --text: #fff; --card: #1c1c1e; --nav-bg: rgba(30,30,30,0.9); }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none; -webkit-user-select: none; }
-        .page { display: none; flex: 1; flex-direction: column; padding: 20px; overflow-y: auto; padding-bottom: 100px; align-items: center; }
-        .page.active { display: flex; }
-        .card { background: var(--card); border-radius: 20px; padding: 20px; width: 100%; margin-bottom: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .btn { background: var(--grad); color: white; border: none; padding: 15px; width: 100%; border-radius: 15px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer; }
-        input { width: 100%; padding: 15px; background: var(--bg); border: none; border-radius: 12px; color: var(--text); margin-bottom: 10px; text-align: center; font-size: 16px; }
-        
-        /* Loading ekrani */
-        #loader { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-        
-        /* 3D Doira */
-        .circle-wrapper { width: 260px; height: 260px; border-radius: 50%; background: var(--card); position: relative; overflow: hidden; border: 5px solid var(--card); box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin: auto; }
-        .liquid { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: linear-gradient(to top, #0ea5e9, #38bdf8); transition: height 0.3s; }
-        .count-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; font-weight: 900; z-index: 10; text-shadow: 0 2px 10px rgba(255,255,255,0.5); }
-        
-        .nav { position: fixed; bottom: 20px; left: 5%; width: 90%; height: 65px; background: var(--nav-bg); backdrop-filter: blur(10px); border-radius: 20px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 5px 20px rgba(0,0,0,0.1); z-index: 100; }
-        .nav-item { font-size: 24px; opacity: 0.5; transition: 0.3s; }
-        .nav-item.active { opacity: 1; color: var(--primary); transform: scale(1.1); }
+        /* --- DIZAYN (ESKI CHIROYLI VERSIYA) --- */
+        :root {
+            --primary: #22c55e;
+            --grad: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+            --danger: #ff4757;
+            --bg: #f2f2f7;
+            --text: #000000;
+            --card: #ffffff;
+            --border: #c6c6c8;
+            --nav-bg: rgba(255, 255, 255, 0.85);
+            --switch-off: #e9e9ea;
+            --icon-inactive: #999999;
+            --water-color: #38bdf8;
+            --water-dark: #0ea5e9;
+            --water-grad: linear-gradient(to top, #0284c7, #38bdf8);
+        }
+
+        body.dark-mode {
+            --primary: #4ade80;
+            --grad: linear-gradient(135deg, #4ade80 0%, #166534 100%);
+            --bg: #000000;
+            --text: #ffffff;
+            --card: #1c1c1e;
+            --border: #38383a;
+            --nav-bg: rgba(30, 30, 30, 0.85);
+            --switch-off: #39393d;
+            --icon-inactive: #666666;
+            --water-color: #0ea5e9; 
+            --water-dark: #0369a1;
+            --water-grad: linear-gradient(to top, #0c4a6e, #0ea5e9);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg); color: var(--text);
+            margin: 0; padding: 0; height: 100vh;
+            display: flex; flex-direction: column; transition: 0.3s;
+            overscroll-behavior: none; overflow: hidden;
+        }
+
+        #loader {
+            position: fixed; inset: 0; background: var(--bg); z-index: 9999;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+        }
+
+        .page { display: none !important; flex: 1; flex-direction: column; padding: 20px; overflow-y: auto; padding-bottom: 100px; align-items: center; -webkit-overflow-scrolling: touch; }
+        .page.active { display: flex !important; }
+        #page-view { justify-content: space-between; padding-bottom: 110px; }
+
+        .card { background: var(--card); border-radius: 20px; padding: 20px; width: 100%; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); text-align: center; transition: transform 0.2s; }
+        .card:active { transform: scale(0.99); }
+        .card.locked { opacity: 0.6; background: rgba(128,128,128,0.1); cursor: not-allowed; display: flex; justify-content: space-between; align-items: center; }
+
+        .btn { background: var(--grad); color: white; border: none; padding: 15px; width: 100%; border-radius: 15px; font-weight: 600; font-size: 16px; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3); }
+        .btn.danger { background: var(--danger); box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3); }
+        input { width: 100%; padding: 15px; background: var(--card); border: none; border-radius: 15px; color: var(--text); margin-bottom: 12px; outline: none; text-align: center; }
+
+        .settings-group { width: 100%; background: var(--card); border-radius: 12px; overflow: hidden; margin-top: 10px; }
+        .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: var(--card); transition: 0.2s; position: relative; }
+        .switch-row:not(:last-child)::after { content: ''; position: absolute; bottom: 0; right: 0; width: calc(100% - 20px); height: 1px; background-color: var(--border); opacity: 0.5; }
+        .switch { position: relative; display: inline-block; width: 51px; height: 31px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--switch-off); transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .profile-stats-row { display: flex; gap: 15px; width: 100%; margin-bottom: 20px; }
+        .p-stat-box { flex: 1; background: var(--card); padding: 15px; border-radius: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: center; }
+        .p-val { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 5px; }
+        .p-lbl { font-size: 12px; opacity: 0.6; }
+
+        /* 3D DOIRA VA SUV EFFEKTI */
+        .circle-wrapper {
+            position: relative; width: 280px; height: 280px; min-width: 280px; min-height: 280px;
+            border-radius: 50%; background: var(--card);
+            box-shadow: inset 10px 10px 20px rgba(0,0,0,0.1), inset -5px -5px 15px rgba(255,255,255,0.5), 0 15px 35px rgba(0,0,0,0.15), 0 0 0 4px var(--card);
+            border: 1px solid var(--border); overflow: hidden; cursor: pointer; margin-top: auto; margin-bottom: 40px; z-index: 1;
+        }
+        .main-word-display { font-size: 32px; font-weight: 800; text-align: center; color: var(--text); margin: 20px 0; line-height: 1.2; word-wrap: break-word; padding: 0 20px; }
+        .liquid-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; transition: height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 2; }
+        .liquid-body { width: 100%; height: 100%; background: var(--water-grad); }
+        .wave { position: absolute; top: -15px; left: 0; width: 200%; height: 30px; background-repeat: repeat-x; background-size: 50% 100%; border-radius: 1000% 1000% 0 0; opacity: 1; }
+        .wave-front { background-color: var(--water-color); animation: waveMove 4s linear infinite; z-index: 3; opacity: 0.8; }
+        .wave-back { background-color: var(--water-dark); top: -20px; animation: waveMove 7s linear infinite reverse; z-index: 2; opacity: 0.5; }
+        @keyframes waveMove { 0% { transform: translateX(0) scaleY(1); } 50% { transform: translateX(-25%) scaleY(0.8); } 100% { transform: translateX(-50%) scaleY(1); } }
+        .droplet { position: absolute; top: -20px; left: 50%; width: 14px; height: 14px; background: var(--water-color); border-radius: 0 50% 50% 50%; transform: translateX(-50%) rotate(45deg); z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .splash-particle { position: absolute; width: 6px; height: 6px; background: var(--water-color); border-radius: 50%; z-index: 6; pointer-events: none; }
+        .ripple { position: absolute; left: 50%; width: 10px; height: 4px; border: 2px solid rgba(255,255,255,0.8); border-radius: 50%; transform: translate(-50%, -50%) scale(0); z-index: 4; animation: rippleAnim 0.6s ease-out forwards; }
+        @keyframes rippleAnim { to { transform: translate(-50%, -50%) scale(8); opacity: 0; border-width: 0; } }
+        .glass-shine { position: absolute; top: 10%; left: 10%; width: 40%; height: 20%; background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%); border-radius: 50%; transform: rotate(-45deg); z-index: 10; pointer-events: none; filter: blur(2px); }
+
+        .nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; height: 70px; background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 25px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1); z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 60px; height: 100%; cursor: pointer; color: var(--icon-inactive); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .nav-item svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: 0.3s; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active svg { transform: translateY(-5px); filter: drop-shadow(0 5px 10px rgba(34, 197, 94, 0.4)); }
+        .nav-dot { width: 5px; height: 5px; background: var(--primary); border-radius: 50%; margin-top: 5px; opacity: 0; transform: scale(0); transition: 0.3s; }
+        .nav-item.active .nav-dot { opacity: 1; transform: scale(1); }
+        .header-nav { width: 100%; display: flex; align-items: center; margin-bottom: 10px; flex-shrink: 0; }
+        .back-btn { font-size: 24px; padding-right: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="loader">
-        <h3>Yuklanmoqda...</h3>
-        <p id="load-status" style="font-size:12px; opacity:0.6">Bulutdan ma'lumot olinmoqda</p>
+        <h3 style="margin-bottom:10px">Yuklanmoqda...</h3>
+        <p style="font-size:12px; opacity:0.6" id="loader-msg">Bulut bilan xavfsiz ulanish</p>
     </div>
 
     <div id="page-home" class="page active">
-        <h2 id="u-name">Assalomu alaykum</h2>
-        <div class="card" onclick="navTo('page-create')" style="border: 2px dashed var(--primary); color: var(--primary); cursor: pointer;">
-            + Yangi Maqsad
+        <h2 id="welcome-text" style="text-align:center">Assalomu alaykum</h2>
+        
+        <div class="card" onclick="navTo('page-create')" style="color:var(--primary); font-weight:bold; cursor:pointer; border: 2px dashed var(--primary); background: transparent;">
+            + Yangi maqsad
         </div>
+        
         <div id="list-container" style="width:100%"></div>
-    </div>
-
+    </div> 
+    
     <div id="page-create" class="page">
         <h2>Yangi Reja</h2>
-        <input type="text" id="inp-name" placeholder="Nomi (Subhanalloh)">
-        <input type="number" id="inp-total" placeholder="Jami soni (3300)">
-        <input type="number" id="inp-days" placeholder="Necha kunda? (30)">
+        <input type="text" id="inp-name" placeholder="Nomi (masalan: Istig'for)">
+        <input type="number" id="inp-total" placeholder="Jami soni (100)" oninput="calcDaily()">
+        <input type="number" id="inp-days" placeholder="Kunlar (10)" oninput="calcDaily()">
+        <div style="width:100%; text-align:center; margin:10px 0; opacity:0.8; font-size:14px">Kuniga (taxminan): <b id="lbl-daily">0</b> ta</div>
         <button class="btn" onclick="createItem()">Boshlash</button>
-        <button class="btn" onclick="navTo('page-home')" style="background:transparent; color:var(--text); border:1px solid #ccc; margin-top:5px">Bekor qilish</button>
-    </div>
-
+        <button class="btn" style="background:transparent; color:var(--text); border:1px solid var(--border)" onclick="navTo('page-home')">Bekor qilish</button>
+    </div> 
+    
+    <div id="page-days" class="page">
+        <div class="header-nav">
+            <span class="back-btn" onclick="navTo('page-home')">⬅️</span>
+            <h3 id="days-title" style="margin:0">Kunlar</h3>
+        </div>
+        <div id="days-container" style="width:100%"></div>
+    </div> 
+    
     <div id="page-view" class="page">
-        <h3 id="view-title" style="margin-bottom:5px">...</h3>
-        <p style="opacity:0.6; font-size:14px; margin-top:0">Bugungi reja: <span id="view-goal">0</span></p>
-        
-        <div class="circle-wrapper" onclick="doCount()">
-            <div class="liquid" id="liquid-ui"></div>
-            <div class="count-text" id="count-display">0</div>
+        <div style="width:100%; flex-shrink: 0;">
+            <div class="header-nav">
+                <span class="back-btn" onclick="closeView()">⬅️</span>
+                <div style="flex:1"></div>
+            </div>
+            <p style="text-align:center; opacity:0.7; margin-bottom:5px">Bugungi reja: <b id="view-goal">0</b></p>
         </div>
         
-        <p style="margin-top:20px; opacity:0.5; font-size:12px">Bosib turing yoki bosing</p>
-        <button class="btn" onclick="navTo('page-home')" style="background:#ddd; color:#000; margin-top:auto">Orqaga</button>
-    </div>
+        <div class="main-word-display" id="view-word-name">...</div>
+        
+        <div class="circle-wrapper" onclick="doCount()" id="circle-area">
+            <div class="liquid-container" id="liq-container">
+                <div class="wave wave-back"></div>
+                <div class="wave wave-front"></div>
+                <div class="liquid-body"></div>
+            </div>
+            <div class="glass-shine"></div>
+        </div>
+        
+        <p style="text-align:center; font-size:12px; opacity:0.5; margin-bottom: 20px; flex-shrink: 0;">Sanash uchun doirani bosing</p>
+    </div> 
+    
+    <div id="page-stats" class="page">
+        <h2>Statistika</h2>
+        <div id="completed-container" style="width:100%"></div>
+    </div> 
+    
+    <div id="page-detail" class="page">
+        <div class="header-nav">
+            <span class="back-btn" onclick="navTo('page-stats')">⬅️</span>
+            <h3 id="detail-title" style="margin:0">Statistika</h3>
+        </div>
+        <div class="card">
+            <div style="font-size:12px; opacity:0.7">Umumiy sarflangan vaqt:</div>
+            <div style="font-size:24px; font-weight:bold; color:var(--primary)" id="detail-time">0 soat</div>
+        </div>
+        <div class="card" style="height: 250px;">
+            <canvas id="timeChart"></canvas>
+        </div>
+        <button class="btn danger" onclick="deleteStatsItem()">🗑 Statistikani o'chirish</button>
+    </div> 
+    
+    <div id="page-profile" class="page">
+        <h2>Profil</h2>
+        <div style="width:80px; height:80px; background:#ddd; border-radius:50%; margin:20px; display:flex; align-items:center; justify-content:center; font-size:30px; object-fit:cover; overflow:hidden">
+             <img id="u-ava-img" src="" style="width:100%; height:100%; display:none">
+             <span id="u-ava-ph">👤</span>
+        </div>
+        <h3 id="u-name" style="margin-top:0; margin-bottom: 25px;">Foydalanuvchi</h3>
+        
+        <div class="profile-stats-row">
+            <div class="p-stat-box">
+                <div class="p-val" id="p-life-count">0</div>
+                <div class="p-lbl">Jami bosildi</div>
+            </div>
+            <div class="p-stat-box">
+                <div class="p-val" id="p-life-time">0m</div>
+                <div class="p-lbl">Umumiy vaqt</div>
+            </div>
+        </div>
 
+        <div class="settings-group">
+            <div class="switch-row">
+                <span style="font-size:17px">Tungi rejim 🌙</span>
+                <label class="switch">
+                    <input type="checkbox" id="tg-dark" onchange="toggleDark()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="switch-row">
+                <span style="font-size:17px">Vibratsiya 📳</span>
+                <label class="switch">
+                    <input type="checkbox" id="tg-vib" onchange="toggleVib()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div> 
+    
     <div class="nav">
-        <div class="nav-item active" onclick="navTo('page-home')">🏠</div>
-        <div class="nav-item" onclick="tg.showPopup({message:'Tez orada...'})">📊</div>
-        <div class="nav-item" onclick="toggleTheme()">🌙</div>
+        <div class="nav-item active" onclick="navTo('page-home')">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <div class="nav-dot"></div>
+        </div>
+        <div class="nav-item" onclick="navTo('page-stats')">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            <div class="nav-dot"></div>
+        </div>
+        <div class="nav-item" onclick="navTo('page-profile')">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <div class="nav-dot"></div>
+        </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        tg.enableClosingConfirmation();
 
-        // MA'LUMOTLAR BAZASI
+        // --- YANGI XAVFSIZ TIZIM O'ZGARUVCHILARI ---
         let items = [];
-        let canSaveToCloud = false; // <<< ENG MUHIM QULF (Dastlab yopiq turadi)
+        let settings = { dark: false, vib: true };
+        let lifetime = { count: 0, time: 0 }; 
 
-        // Telegram Cloud Kalitlari
-        const KEY_ITEMS = 'zikr_db_secure_v1';
+        // HIMOYA QULFI: Dastlab "Yolg'on" (yopiq) bo'ladi
+        let canSaveToCloud = false; 
+        let saveTimer = null;
 
+        // BAZA KALITLARI
+        const KEY_ITEMS = 'zikr_v2_items_safe';
+        const KEY_SETTINGS = 'zikr_v2_settings';
+        const KEY_LIFE = 'zikr_v2_life';
+
+        // O'tkinchi o'zgaruvchilar (logika uchun)
+        let currentItemId = null;
+        let currentDayIndex = null;
+        let sessionStart = 0;
+        let chartInstance = null;
+
+        // --- 1. DASTUR ISHGA TUSHISHI ---
         window.onload = function() {
-            // 1. Ismni qo'yish
-            if(tg.initDataUnsafe?.user) {
-                document.getElementById('u-name').innerText = "Salom, " + tg.initDataUnsafe.user.first_name;
-            }
+            initUser();
+            initApp(); // Yangi "aqlli" yuklash
+            
+            // Xavfsizlik: Agar internet sekin bo'lsa, 5 sekunddan keyin majburan ochamiz (lekin bulutga yozishni yoqmaymiz)
+            setTimeout(() => {
+                if(document.getElementById('loader').style.display !== 'none') {
+                    document.getElementById('loader').style.display = 'none';
+                    // Eslatma: canSaveToCloud baribir false bo'lib qoladi, ma'lumot o'chib ketmaydi
+                }
+            }, 6000);
 
-            // 2. Tizimni ishga tushirish (Avval bulutni tekshiramiz)
-            initApp();
+            window.addEventListener("beforeunload", () => { closeView(true); saveAllData(true); });
         };
 
-        async function initApp() {
-            // Avval lokalni o'qiymiz (ko'rsatish uchun), lekin saqlashni yoqmaymiz
-            const localData = localStorage.getItem(KEY_ITEMS);
-            if(localData) {
-                items = JSON.parse(localData);
-                renderList();
+        function initUser() {
+            if(tg.initDataUnsafe?.user) {
+                const u = tg.initDataUnsafe.user;
+                document.getElementById('welcome-text').innerText = "Salom, " + u.first_name;
+                document.getElementById('u-name').innerText = u.first_name;
+                if(u.photo_url) {
+                    document.getElementById('u-ava-img').src = u.photo_url;
+                    document.getElementById('u-ava-img').style.display = 'block';
+                    document.getElementById('u-ava-ph').style.display = 'none';
+                }
             }
+        }
 
-            // Endi Bulutni tekshiramiz
+        // --- 2. YANGI "AQLLI" YUKLASH FUNKSIYASI ---
+        function initApp() {
+            // A) Avval lokal xotirani o'qib, ekranga chiqaramiz (foydalanuvchi kutib qolmasligi uchun)
+            try {
+                const localI = localStorage.getItem(KEY_ITEMS);
+                const localS = localStorage.getItem(KEY_SETTINGS);
+                const localL = localStorage.getItem(KEY_LIFE);
+                if(localI) items = JSON.parse(localI);
+                if(localS) settings = JSON.parse(localS);
+                if(localL) lifetime = JSON.parse(localL);
+                
+                applySettings();
+                renderList();
+                updateProfileUI();
+            } catch(e) { console.error("Lokal o'qish xatosi", e); }
+
+            // B) Endi Bulutni tekshiramiz
             if(!tg.CloudStorage) {
-                // Agar Cloud ishlamasa (brauzerda), ruxsat beramiz
-                canSaveToCloud = true;
+                canSaveToCloud = true; // Bulut yo'q bo'lsa, lokal ishlataveramiz
                 document.getElementById('loader').style.display = 'none';
                 return;
             }
 
-            // Telegram Cloud'dan o'qish
-            tg.CloudStorage.getItem(KEY_ITEMS, (err, value) => {
-                if(!err && value) {
-                    // BULUTDA MA'LUMOT BOR!
-                    const cloudItems = JSON.parse(value);
-                    console.log("Bulutdan keldi:", cloudItems.length);
+            tg.CloudStorage.getItem([KEY_ITEMS, KEY_SETTINGS, KEY_LIFE], (err, res) => {
+                if(!err && res) {
+                    let cloudItems = [];
+                    // Bulut ma'lumotlarini o'qish
+                    try { if(res[KEY_ITEMS]) cloudItems = JSON.parse(res[KEY_ITEMS]); } catch(e){}
                     
+                    // QAROR QABUL QILISH LOGIKASI:
                     if(cloudItems.length > 0) {
-                        // Agar lokal bo'sh bo'lsa yoki bulutda ko'proq narsa bo'lsa, bulutni olamiz
+                        // 1. Agar bulutda ma'lumot bo'lsa -> Uni asosiy deb olamiz
                         items = cloudItems;
-                        localStorage.setItem(KEY_ITEMS, JSON.stringify(items));
-                    } else if (items.length > 0) {
-                        // Bulut bo'sh, lekin telefonda bor -> demak bulutga yozish kerak
-                        console.log("Bulut bo'sh, lokal yozilmoqda");
+                        if(res[KEY_SETTINGS]) settings = JSON.parse(res[KEY_SETTINGS]);
+                        if(res[KEY_LIFE]) lifetime = JSON.parse(res[KEY_LIFE]);
+                        
+                        console.log("Bulutdan yuklandi. Elementlar:", items.length);
+                        // Darhol lokalga ham yangilab qo'yamiz
+                        saveLocalOnly();
+                    } 
+                    else if (items.length > 0) {
+                        // 2. Bulut bo'sh, lekin telefonda bor -> Demak bulutga yozishimiz kerak
+                        console.log("Bulut bo'sh, lokal ma'lumot saqlanadi.");
                     }
-                } else {
-                    console.log("Bulut bo'sh yoki xato.");
+                    
+                    // Ekranni yangilash
+                    applySettings();
+                    renderList();
+                    updateProfileUI();
                 }
 
-                // ENG MUHIMI: Endi saqlashga ruxsat beramiz
-                canSaveToCloud = true; 
+                // C) ENG MUHIMI: Hamma tekshiruv tugagach, SAQLASHGA RUXSAT BERAMIZ
+                canSaveToCloud = true;
                 document.getElementById('loader').style.display = 'none';
-                renderList();
             });
         }
 
-        // --- SAQLASH TIZIMI (HIMOYALANGAN) ---
-        function saveAll() {
-            // 1. Har doim telefonga saqlaymiz
+        // --- 3. SAQLASH TIZIMI (HIMOYALANGAN) ---
+        function saveLocalOnly() {
             localStorage.setItem(KEY_ITEMS, JSON.stringify(items));
+            localStorage.setItem(KEY_SETTINGS, JSON.stringify(settings));
+            localStorage.setItem(KEY_LIFE, JSON.stringify(lifetime));
+        }
 
-            // 2. QULFNI TEKSHIRAMIZ
+        function saveAllData(force = false) {
+            // 1. Telefonga har doim saqlaymiz
+            saveLocalOnly();
+
+            // 2. QULF: Agar ruxsat bo'lmasa, to'xtaymiz (Ma'lumot o'chib ketishidan himoya)
             if(!canSaveToCloud) {
-                console.warn("DIQQAT: Bulutga yozish bloklangan! (Hali yuklanmadi)");
+                console.warn("Hali ruxsat yo'q, bulutga yozilmadi.");
                 return;
             }
 
-            // 3. Bulutga yozamiz
-            if(tg.CloudStorage) {
-                tg.CloudStorage.setItem(KEY_ITEMS, JSON.stringify(items), (err) => {
+            // 3. Agar ruxsat bo'lsa, bulutga yozamiz
+            if(!tg.CloudStorage) return;
+
+            // Ko'p so'rov yubormaslik uchun "Throttle" (sekinlatish)
+            if(saveTimer) clearTimeout(saveTimer);
+
+            const doCloud = () => {
+                tg.CloudStorage.setItem(KEY_ITEMS, JSON.stringify(items));
+                tg.CloudStorage.setItem(KEY_SETTINGS, JSON.stringify(settings));
+                tg.CloudStorage.setItem(KEY_LIFE, JSON.stringify(lifetime), (err) => {
                     if(err) console.error("Bulut xatosi:", err);
                 });
-            }
+            };
+
+            if(force) doCloud();
+            else saveTimer = setTimeout(doCloud, 3000); // Har 3 sekundda bir saqlaydi
         }
 
-        // --- LOGIKA ---
+
+        // --- UI LOGIKA (ESKI CHIROYLI KODLAR) ---
+
+        function cleanOldItems() {
+            // O'chirilganlarni ko'rsatmaslik uchun filtr
+             items.forEach(item => {
+                if(item.deleted) return;
+                const totalDone = item.progress.reduce((a, b) => a + b, 0);
+                if (totalDone >= item.total) item.status = 'completed';
+            });
+        }
+
+        function recalculateGoals() {
+            const today = new Date().setHours(0,0,0,0);
+            let changed = false;
+            items.forEach(item => {
+                if (item.status === 'completed' || item.deleted) return;
+                const daysPassed = Math.floor((today - item.startDate) / (1000 * 60 * 60 * 24));
+                if (daysPassed > 0 && daysPassed < item.durationDays) {
+                    let doneInPast = 0; 
+                    for(let i=0; i < daysPassed; i++) doneInPast += item.progress[i] || 0;
+                    const rem = item.total - doneInPast; 
+                    const dLeft = item.durationDays - daysPassed;
+                    if (rem > 0 && dLeft > 0) {
+                        const n = Math.ceil(rem / dLeft);
+                        if (item.dailyGoal !== n) { item.dailyGoal = n; changed = true; }
+                    }
+                }
+            });
+            if(changed) saveLocalOnly();
+        }
+
+        function calcDaily() {
+            const t = parseInt(document.getElementById('inp-total').value) || 0;
+            const d = parseInt(document.getElementById('inp-days').value) || 0;
+            document.getElementById('lbl-daily').innerText = (t && d) ? Math.ceil(t/d) : 0;
+        }
+
         function createItem() {
             const name = document.getElementById('inp-name').value;
             const total = parseInt(document.getElementById('inp-total').value);
             const days = parseInt(document.getElementById('inp-days').value);
-
-            if(!name || !total || !days) return tg.showAlert("Hamma katakni to'ldiring!");
-
-            items.push({
-                id: Date.now(),
-                name: name,
-                total: total,
-                daily: Math.ceil(total/days),
-                progress: 0
-            });
-
-            saveAll();
-            navTo('page-home');
+            if(!name || !total || !days) return tg.showAlert("Ma'lumotlarni to'ldiring!");
             
-            // Inputlarni tozalash
-            document.getElementById('inp-name').value = '';
-            document.getElementById('inp-total').value = '';
-            document.getElementById('inp-days').value = '';
+            items.push({
+                id: Date.now(), name: name, total: total, durationDays: days,
+                dailyGoal: Math.ceil(total / days), startDate: new Date().setHours(0,0,0,0),
+                progress: new Array(days).fill(0), totalTimeMs: 0, history: {}, status: 'active', deleted: false
+            });
+            saveAllData();
+            document.getElementById('inp-name').value = ''; document.getElementById('inp-total').value = ''; document.getElementById('inp-days').value = '';
+            navTo('page-home');
         }
 
-        let curId = null;
-        function openItem(id) {
-            curId = id;
-            const item = items.find(i => i.id == id);
-            document.getElementById('view-title').innerText = item.name;
-            document.getElementById('view-goal').innerText = item.daily;
-            updateUI(item);
+        function openDaysList(id) {
+            currentItemId = id; const item = items.find(i => i.id === id); if(!item) return;
+            document.getElementById('days-title').innerText = item.name;
+            const container = document.getElementById('days-container'); container.innerHTML = '';
+            recalculateGoals();
+            const today = new Date().setHours(0,0,0,0);
+            const daysPassed = Math.floor((today - item.startDate) / (1000 * 60 * 60 * 24));
+            
+            for (let i = 0; i < item.durationDays; i++) {
+                const dayNum = i + 1; const isLocked = i > daysPassed;
+                const currentCount = item.progress[i];
+                let icon = isLocked ? '🔒' : (currentCount >= item.dailyGoal ? '✅' : '👉');
+                let st = isLocked ? 'Qulflangan' : `${currentCount} / ${item.dailyGoal}`;
+                if(i === daysPassed) st = `Bugun: ${st}`;
+                
+                const div = document.createElement('div');
+                div.className = `card ${isLocked?'locked':''}`;
+                div.innerHTML = `<div style="font-weight:bold">${dayNum}-kun</div><div style="font-size:14px;opacity:0.7">${st}</div><div>${icon}</div>`;
+                div.onclick = isLocked ? () => tg.showAlert("Bu kun hali kelmadi!") : () => openCounter(i);
+                container.appendChild(div);
+            }
+            navTo('page-days');
+        }
+
+        function openCounter(dayIdx) {
+            currentDayIndex = dayIdx; sessionStart = Date.now();
+            const item = items.find(i => i.id === currentItemId);
+            document.getElementById('view-word-name').innerText = item.name;
+            document.getElementById('view-goal').innerText = item.dailyGoal;
+            updateCircleUI(item);
             navTo('page-view');
         }
 
         function doCount() {
-            if(!curId) return;
-            const item = items.find(i => i.id == curId);
+            if (currentItemId === null || currentDayIndex === null) return;
+            const item = items.find(i => i.id === currentItemId);
+            if (item.progress[currentDayIndex] >= item.dailyGoal) return;
+
+            item.progress[currentDayIndex]++; 
+            lifetime.count++;
             
-            if(item.progress < item.total) {
-                item.progress++;
-                tg.HapticFeedback.impactOccurred('light'); // Vibratsiya
-                updateUI(item);
-                
-                // Darhol saqlamaymiz (qotmasligi uchun), kichik pauza bilan
-                clearTimeout(window.saveTimer);
-                window.saveTimer = setTimeout(saveAll, 1000);
-            } else {
-                tg.showAlert("Tabriklaymiz! Tugadi.");
+            if(settings.vib) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
+            
+            triggerDropEffect(item);
+            saveAllData(); // Bu yerda endi sekin (throttle) saqlaydi
+            
+            if (item.progress[currentDayIndex] >= item.dailyGoal) {
+                setTimeout(() => updateCircleUI(item), 600);
+                const allDone = item.progress.every(p => p >= item.dailyGoal);
+                setTimeout(() => {
+                    closeView(); 
+                    if (allDone) {
+                        item.status = 'completed'; saveAllData(true);
+                        tg.showPopup({title:"Tabriklaymiz! 🏆", message:"Barcha kunlar tugadi!"}, () => navTo('page-home'));
+                    } else { saveAllData(true); openDaysList(currentItemId); }
+                }, 1500);
+            } else { setTimeout(() => updateCircleUI(item), 500); }
+        }
+
+        function triggerDropEffect(item) {
+            const wrapper = document.getElementById('circle-area');
+            const cur = item.progress[currentDayIndex] - 1; 
+            const max = item.dailyGoal;
+            let percent = (cur / max) * 100; if(percent > 100) percent = 100; if(percent < 5) percent = 5; 
+            const drop = document.createElement('div'); drop.className = 'droplet'; wrapper.appendChild(drop);
+            const surfaceTop = 100 - percent; 
+            const anim = drop.animate([{ top: '-20px', opacity: 1, transform: 'translateX(-50%) rotate(45deg) scale(1)' }, { top: `calc(${surfaceTop}% - 10px)`, opacity: 1, transform: 'translateX(-50%) rotate(45deg) scale(0.8)' }], { duration: 500, easing: 'cubic-bezier(0.55, 0.06, 0.68, 0.19)' });
+            anim.onfinish = () => { drop.remove(); createSplash(surfaceTop); };
+        }
+
+        function createSplash(topPercent) {
+            const wrapper = document.getElementById('circle-area');
+            const ripple = document.createElement('div'); ripple.className = 'ripple'; ripple.style.top = topPercent + '%'; wrapper.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+            for(let i=0; i<6; i++) {
+                const p = document.createElement('div'); p.className = 'splash-particle'; p.style.top = topPercent + '%'; p.style.left = '50%'; wrapper.appendChild(p);
+                const rx = (Math.random() - 0.5) * 60; const ry = -20 - Math.random() * 30;   
+                p.animate([{ transform: 'translate(0, 0) scale(1)', opacity: 1 }, { transform: `translate(${rx}px, ${ry}px) scale(0)`, opacity: 0 }], { duration: 400 + Math.random()*200 }).onfinish = () => p.remove();
             }
         }
 
-        function updateUI(item) {
-            document.getElementById('count-display').innerText = item.progress;
-            // Suyuqlik balandligi
-            let percent = (item.progress / item.total) * 100;
-            document.getElementById('liquid-ui').style.height = percent + "%";
+        function updateCircleUI(item) {
+            const cur = item.progress[currentDayIndex]; const max = item.dailyGoal;
+            let ratio = cur / max; if (ratio > 1) ratio = 1;
+            document.getElementById('liq-container').style.height = (100 * ratio) + "%";
+        }
+
+        function closeView(isForce = false) {
+            if (currentItemId && sessionStart > 0) {
+                const diff = Date.now() - sessionStart; 
+                const item = items.find(i => i.id === currentItemId);
+                if(item) {
+                    item.totalTimeMs += diff; lifetime.time += diff;
+                    const dKey = new Date().toISOString().split('T')[0];
+                    item.history[dKey] = (item.history[dKey] || 0) + diff;
+                    saveLocalOnly();
+                }
+            }
+            sessionStart = 0; if(!isForce) { currentDayIndex = null; openDaysList(currentItemId); }
+        }
+
+        function deleteStatsItem() {
+            if (!currentItemId) return;
+            tg.showPopup({ title: "O'chirish", message: "Haqiqatan ham o'chirasizmi?", buttons: [{id: 'd', type: 'destructive', text: "O'chirish"}, {id: 'c', type: 'cancel', text: "Bekor qilish"}] }, (id) => {
+                if (id === 'd') { 
+                    const item = items.find(i => i.id === currentItemId); if(item) item.deleted = true;
+                    saveAllData(true); currentItemId = null; navTo('page-stats'); 
+                }
+            });
         }
 
         function renderList() {
-            const div = document.getElementById('list-container');
-            div.innerHTML = '';
-            items.forEach(item => {
-                let p = Math.floor((item.progress / item.total) * 100);
-                let el = document.createElement('div');
-                el.className = 'card';
-                el.innerHTML = `<b>${item.name}</b><br><small>${item.progress} / ${item.total}</small>
-                                <div style="background:#eee; height:5px; margin-top:5px; border-radius:3px">
-                                    <div style="background:var(--primary); width:${p}%; height:100%"></div>
-                                </div>`;
-                el.onclick = () => openItem(item.id);
+            recalculateGoals();
+            const div = document.getElementById('list-container'); div.innerHTML = '';
+            const active = items.filter(i => i.status !== 'completed' && !i.deleted);
+            if(active.length === 0) div.innerHTML = '<p style="text-align:center;opacity:0.5;margin-top:20px">Hozircha maqsadlar yo\'q.<br>Yangi qo\'shing!</p>';
+            active.forEach(item => {
+                const totalP = item.progress.reduce((a,b)=>a+b, 0); const percent = Math.floor((totalP / item.total) * 100);
+                const el = document.createElement('div'); el.className = 'card'; el.onclick = () => openDaysList(item.id);
+                el.innerHTML = `<h3>${item.name}</h3><div style="font-size:12px;opacity:0.7;margin-bottom:5px">Jami: ${totalP} / ${item.total}</div><div style="background:#e9e9ea;height:8px;border-radius:4px;overflow:hidden"><div style="width:${percent}%;background:var(--grad);height:100%"></div></div>`;
                 div.appendChild(el);
             });
         }
 
-        function navTo(pageId) {
+        function showDetail(id) {
+            currentItemId = id; const item = items.find(i => i.id === id);
+            document.getElementById('detail-title').innerText = item.name;
+            document.getElementById('detail-time').innerText = Math.floor(item.totalTimeMs / 60000) + " daqiqa";
+            navTo('page-detail');
+            if(chartInstance) chartInstance.destroy();
+            const ctx = document.getElementById('timeChart').getContext('2d');
+            const clr = settings.dark ? '#fff' : '#000';
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: Object.keys(item.history), datasets: [{ label: 'Vaqt (daqiqa)', data: Object.values(item.history).map(ms => (ms/60000).toFixed(1)), backgroundColor: '#22c55e', borderRadius: 6 }] },
+                options: { responsive:true, maintainAspectRatio:false, scales: { y: { ticks: { color: clr } }, x: { ticks: { color: clr } } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function renderStats() {
+            const div = document.getElementById('completed-container'); div.innerHTML = '';
+            const list = items.filter(i => i.status === 'completed' && !i.deleted);
+            if(list.length === 0) div.innerHTML = '<p style="text-align:center;opacity:0.5;margin-top:20px">Tarix bo\'sh</p>';
+            list.forEach(item => {
+                const el = document.createElement('div'); el.className = 'card'; el.style.background = 'rgba(34, 197, 94, 0.2)';
+                el.onclick = () => showDetail(item.id);
+                el.innerHTML = `<b>${item.name} ✅</b><br><span style="font-size:12px">Statistika</span>`;
+                div.appendChild(el);
+            });
+        }
+
+        function updateProfileUI() {
+            document.getElementById('p-life-count').innerText = lifetime.count;
+            let tm = Math.floor(lifetime.time / 60000);
+            document.getElementById('p-life-time').innerText = (tm > 60 ? Math.floor(tm/60)+"s " : "") + (tm%60) + "m";
+        }
+
+        function navTo(pid) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            if(pageId === 'page-home') renderList();
+            document.getElementById(pid).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            
+            // Back button control
+            if(pid === 'page-home') {
+                 document.querySelectorAll('.nav-item')[0].classList.add('active'); renderList(); tg.BackButton.hide();
+            } else {
+                tg.BackButton.show();
+                tg.BackButton.onClick(() => {
+                    if(pid === 'page-view') closeView();
+                    else if(pid === 'page-detail') navTo('page-stats');
+                    else if(pid === 'page-days') navTo('page-home');
+                    else if(pid === 'page-create') navTo('page-home');
+                    else navTo('page-home');
+                    tg.BackButton.offClick();
+                });
+            }
+            if(pid==='page-stats') { document.querySelectorAll('.nav-item')[1].classList.add('active'); renderStats(); }
+            if(pid==='page-profile') { document.querySelectorAll('.nav-item')[2].classList.add('active'); updateProfileUI(); }
         }
-
-        function toggleTheme() {
-            document.body.classList.toggle('dark-mode');
+        
+        function applySettings() {
+            if(settings.dark) document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
+            document.getElementById('tg-dark').checked = settings.dark; document.getElementById('tg-vib').checked = settings.vib;
+            try { const c = getComputedStyle(document.body).getPropertyValue('--bg').trim(); tg.setHeaderColor(c); tg.setBackgroundColor(c); } catch(e){}
         }
-
+        function toggleDark() { settings.dark = !settings.dark; applySettings(); saveLocalOnly(); }
+        function toggleVib() { settings.vib = !settings.vib; saveLocalOnly(); }
     </script>
 </body>
 </html>

@@ -1,119 +1,129 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
-tg.enableClosingConfirmation();
 
-// MA'LUMOTLAR
-let appData = {
-    items: [],
-    settings: { dark: false, vib: true },
-    lifetime: { count: 0, time: 0 },
-    lastUpdated: 0 
-};
+// --- 1. SOZLAMALAR ---
+const DB_KEY = 'zikr_final_fixed_v7'; // Yangi toza baza kaliti
+let appData = { items: [], settings: { dark: false, vib: true }, lifetime: { count: 0, time: 0 } };
 
-let canSaveToCloud = false;
+// ENG MUHIM QULF: Bu "false" turganda hech narsa saqlanmaydi!
+let isReadyToSave = false; 
 let saveTimer = null;
-const STORAGE_KEY = 'zikr_final_v5_full';
 
+// O'zgaruvchilar
 let currentItemId = null;
 let currentDayIndex = null;
 let sessionStart = 0;
 let chartInstance = null;
 
+// --- 2. DASTUR BOSHLANISHI ---
 window.onload = function() {
-    initUser();
-    initApp();
+    // Ekranni bloklaymiz
+    document.getElementById('loader').style.display = 'flex';
     
+    initUser();
+    
+    // Bulutdan ma'lumot olishni boshlaymiz
+    loadFromCloud();
+
+    // Xavfsizlik: Agar 10 sekundda internet ishlamasa, majburan ochamiz (lekin saqlashni yoqmaymiz)
     setTimeout(() => {
         if(document.getElementById('loader').style.display !== 'none') {
             document.getElementById('loader').style.display = 'none';
-            canSaveToCloud = true; 
+            alert("Internet past. Ma'lumotlar faqat telefoningizda qoladi.");
         }
     }, 10000);
 
-    window.addEventListener("beforeunload", () => { closeView(true); saveAllData(true); });
+    // Ilovadan chiqishda saqlash
+    window.addEventListener("beforeunload", () => { closeView(true); saveData(true); });
 };
 
-function initUser() {
-    if(tg.initDataUnsafe?.user) {
-        const u = tg.initDataUnsafe.user;
-        document.getElementById('welcome-text').innerText = "Salom, " + u.first_name;
-        document.getElementById('u-name').innerText = u.first_name;
-        if(u.photo_url) {
-            document.getElementById('u-ava-img').src = u.photo_url;
-            document.getElementById('u-ava-img').style.display = 'block';
-            document.getElementById('u-ava-ph').style.display = 'none';
-        }
-    }
-}
-
-function initApp() {
-    try {
-        const localRaw = localStorage.getItem(STORAGE_KEY);
-        if (localRaw) {
-            const localParsed = JSON.parse(localRaw);
-            if (localParsed.items) {
-                appData = localParsed;
-                renderAll();
-            }
-        }
-    } catch(e) { console.log("Lokal xato"); }
-
+// --- 3. MA'LUMOTNI YUKLASH (ENG MUHIM QISM) ---
+function loadFromCloud() {
+    console.log("Bulut tekshirilmoqda...");
+    
     if (!tg.CloudStorage) {
-        canSaveToCloud = true;
+        // Agar Telegramda ochilmasa (brauzerda bo'lsa)
+        console.log("Bulut yo'q, lokal rejim.");
+        loadLocal();
+        isReadyToSave = true; 
         document.getElementById('loader').style.display = 'none';
         return;
     }
 
-    tg.CloudStorage.getItem(STORAGE_KEY, (err, val) => {
-        if (!err && val) {
+    tg.CloudStorage.getItem(DB_KEY, (err, value) => {
+        if (err) {
+            console.error("Bulut xatosi:", err);
+            // Xato bo'lsa ham lokalni ochamiz, lekin ehtiyot bo'lib
+            loadLocal();
+        } else if (value) {
+            // BULUTDA MA'LUMOT BOR!
+            console.log("Bulutdan yuklandi!");
             try {
-                const cloudData = JSON.parse(val);
-                const localTime = appData.lastUpdated || 0;
-                const cloudTime = cloudData.lastUpdated || 0;
-
-                if (cloudTime > localTime || (appData.items.length === 0 && cloudData.items.length > 0)) {
-                    appData = cloudData;
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-                }
-            } catch (e) { console.error("Bulut JSON xato", e); }
-        }
-        
-        canSaveToCloud = true;
-        renderAll();
-        document.getElementById('loader').style.display = 'none';
-    });
-}
-
-function saveLocalOnly() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-}
-
-function saveAllData(force = false) {
-    appData.lastUpdated = Date.now();
-    saveLocalOnly();
-
-    if (!canSaveToCloud || !tg.CloudStorage) return;
-
-    if (saveTimer) clearTimeout(saveTimer);
-    const doCloud = () => {
-        tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-    };
-
-    if (force) doCloud(); else saveTimer = setTimeout(doCloud, 2000);
-}
-
-function forceCloudSync() {
-    if(!confirm("Hozirgi ma'lumotlarni o'chirib, Bulutdagini yuklaymi?")) return;
-    tg.CloudStorage.getItem(STORAGE_KEY, (err, val) => {
-        if(!err && val) {
-            appData = JSON.parse(val);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-            renderAll();
-            alert("Tiklandi!");
+                appData = JSON.parse(value);
+                // Darhol lokalga ham yozib qo'yamiz (sinxronizatsiya)
+                localStorage.setItem(DB_KEY, JSON.stringify(appData));
+            } catch (e) {
+                console.error("JSON xato", e);
+                loadLocal();
+            }
         } else {
-            alert("Bulut bo'sh.");
+            // BULUT BO'SH (Demak bu yangi user yoki tozalangan)
+            console.log("Bulut bo'sh. Lokal tekshiriladi.");
+            loadLocal(); 
         }
+
+        // HAMMASI TUGADI - ENDI SAQLASHGA RUXSAT BERAMIZ
+        isReadyToSave = true;
+        document.getElementById('loader').style.display = 'none';
+        renderAll();
     });
+}
+
+function loadLocal() {
+    const local = localStorage.getItem(DB_KEY);
+    if (local) {
+        try { appData = JSON.parse(local); } catch(e){}
+    }
+}
+
+// --- 4. SAQLASH TIZIMI (QATTIQ NAZORAT) ---
+function saveData(force = false) {
+    // 1-TEKSHIRUV: Agar ruxsat bo'lmasa, TO'XTA!
+    if (!isReadyToSave) {
+        console.warn("Saqlash bloklangan! (Hali yuklanmadi)");
+        return;
+    }
+
+    // 1. Lokalga saqlash (Har doim)
+    localStorage.setItem(DB_KEY, JSON.stringify(appData));
+
+    // 2. Bulutga saqlash
+    if (tg.CloudStorage) {
+        if (saveTimer) clearTimeout(saveTimer);
+        
+        const doCloudSave = () => {
+            tg.CloudStorage.setItem(DB_KEY, JSON.stringify(appData), (err) => {
+                if(err) console.log("Bulutga yozishda xato");
+            });
+        };
+
+        if (force) doCloudSave();
+        else saveTimer = setTimeout(doCloudSave, 2000); // 2 sekund kutib saqlash
+    }
+}
+
+// --- 5. QOLGAN FUNKSIYALAR (LOGIKA) ---
+
+function initUser() {
+    if(tg.initDataUnsafe?.user) {
+        document.getElementById('welcome-text').innerText = "Salom, " + tg.initDataUnsafe.user.first_name;
+        document.getElementById('u-name').innerText = tg.initDataUnsafe.user.first_name;
+        if(tg.initDataUnsafe.user.photo_url) {
+            document.getElementById('u-ava-img').src = tg.initDataUnsafe.user.photo_url;
+            document.getElementById('u-ava-img').style.display = 'block';
+            document.getElementById('u-ava-ph').style.display = 'none';
+        }
+    }
 }
 
 function renderAll() {
@@ -133,12 +143,17 @@ function createItem() {
         dailyGoal: Math.ceil(total / days), startDate: new Date().setHours(0,0,0,0),
         progress: new Array(days).fill(0), totalTimeMs: 0, history: {}, status: 'active', deleted: false
     });
-    saveAllData();
+    
+    saveData(); // Saqlash
     navTo('page-home');
-    document.getElementById('inp-name').value = ''; document.getElementById('inp-total').value = ''; document.getElementById('inp-days').value = '';
+    
+    document.getElementById('inp-name').value = ''; 
+    document.getElementById('inp-total').value = ''; 
+    document.getElementById('inp-days').value = '';
 }
 
 function renderList() {
+    // Bugungi kunni hisoblash
     const today = new Date().setHours(0,0,0,0);
     appData.items.forEach(item => {
         if (item.status === 'completed' || item.deleted) return;
@@ -202,15 +217,21 @@ function doCount() {
 
     item.progress[currentDayIndex]++; appData.lifetime.count++;
     if(appData.settings.vib) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
+    
     triggerDropEffect(item);
-    saveAllData(); 
+    saveData(); // Saqlash
+    
     if (item.progress[currentDayIndex] >= item.dailyGoal) {
         setTimeout(() => updateCircleUI(item), 600);
         const allDone = item.progress.every(p => p >= item.dailyGoal);
         setTimeout(() => {
             closeView(); 
-            if (allDone) { item.status = 'completed'; saveAllData(true); tg.showPopup({title:"Tabriklaymiz!", message:"Tugadi!"}, () => navTo('page-home')); }
-            else { saveAllData(true); openDaysList(currentItemId); }
+            if (allDone) { 
+                item.status = 'completed'; saveData(true); 
+                tg.showPopup({title:"Tabriklaymiz!", message:"Tugadi!"}, () => navTo('page-home')); 
+            } else { 
+                saveData(true); openDaysList(currentItemId); 
+            }
         }, 1500);
     } else { setTimeout(() => updateCircleUI(item), 500); }
 }
@@ -250,7 +271,7 @@ function closeView(isForce = false) {
             item.totalTimeMs += diff; appData.lifetime.time += diff;
             const dKey = new Date().toISOString().split('T')[0];
             item.history[dKey] = (item.history[dKey] || 0) + diff;
-            saveAllData();
+            saveData();
         }
     }
     sessionStart = 0; if(!isForce) { currentDayIndex = null; openDaysList(currentItemId); }
@@ -261,7 +282,7 @@ function deleteStatsItem() {
     tg.showPopup({ title: "O'chirish", message: "Aniqmi?", buttons: [{id: 'd', type: 'destructive', text: "Ha"}, {id: 'c', type: 'cancel', text: "Yo'q"}] }, (id) => {
         if (id === 'd') { 
             const item = appData.items.find(i => i.id === currentItemId); if(item) item.deleted = true;
-            saveAllData(true); currentItemId = null; navTo('page-stats'); 
+            saveData(true); currentItemId = null; navTo('page-stats'); 
         }
     });
 }
@@ -327,5 +348,11 @@ function applySettings() {
     if(appData.settings.dark) document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
     try { const c = getComputedStyle(document.body).getPropertyValue('--bg').trim(); tg.setHeaderColor(c); tg.setBackgroundColor(c); } catch(e){}
 }
-function toggleDark() { appData.settings.dark = !appData.settings.dark; applySettings(); saveAllData(); }
-function toggleVib() { appData.settings.vib = !appData.settings.vib; saveAllData(); }
+function toggleDark() { appData.settings.dark = !appData.settings.dark; applySettings(); saveData(); }
+function toggleVib() { appData.settings.vib = !appData.settings.vib; saveData(); }
+
+function forceCloudSync() {
+    isReadyToSave = false; // Vaqtincha bloklash
+    document.getElementById('loader').style.display = 'flex';
+    loadFromCloud();
+}

@@ -155,14 +155,18 @@ function createItem() {
 function renderList() {
     // Bugungi kunni hisoblash
     const today = new Date().setHours(0,0,0,0);
+    
     appData.items.forEach(item => {
         if (item.status === 'completed' || item.deleted) return;
-        const daysPassed = Math.floor((today - item.startDate) / (1000 * 60 * 60 * 24));
-        if (daysPassed > 0 && daysPassed < item.durationDays) {
-            let doneInPast = 0; for(let i=0; i<daysPassed; i++) doneInPast += item.progress[i] || 0;
-            const rem = item.total - doneInPast; const dLeft = item.durationDays - daysPassed;
-            if (rem>0 && dLeft>0) item.dailyGoal = Math.ceil(rem/dLeft);
-        }
+
+        // --- TUZATILGAN JOY ---
+        // Eski kodda shu yerda qarzni hisoblaydigan formula bor edi.
+        // Biz uni olib tashladik va DOIMIY (STATIK) hisob-kitobni qo'ydik.
+        
+        // Bu formulada maqsad har kuni bir xil bo'lib qoladi (Jami / Kunlar soni)
+        // Agar bir kun kam aytsangiz ham, ertasi kuni reja oshib ketmaydi.
+        item.dailyGoal = Math.ceil(item.total / item.durationDays);
+        // ----------------------
     });
 
     const div = document.getElementById('list-container'); div.innerHTML = '';
